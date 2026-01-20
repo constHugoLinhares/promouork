@@ -1,0 +1,5 @@
+.env
+prisma/generated
+*.js
+*.js.map
+.pnpm-store

@@ -1,0 +1,97 @@
+services:
+  evolution_postgres:
+    image: postgres:15
+    container_name: evolution_postgres
+    restart: unless-stopped
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "listen_addresses=*"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=1GB"
+      - "-c"
+      - "work_mem=4MB"
+    environment:
+      POSTGRES_USER: ${EVOLUTION_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${EVOLUTION_POSTGRES_PASSWORD:-evolution_dev_2024}
+      POSTGRES_DB: ${EVOLUTION_POSTGRES_DB:-evolution_db}
+      POSTGRES_HOST_AUTH_METHOD: trust
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${EVOLUTION_POSTGRES_PORT:-5431}:5432"
+    volumes:
+      - evolution_postgres_data:/var/lib/postgresql/data
+    networks:
+      - evolution_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EVOLUTION_POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  evolution_api:
+    image: ${EVOLUTION_API_IMAGE:-chat2one/sending2:v2.5.5}
+    container_name: evolution_api
+    platform: linux/amd64
+    restart: unless-stopped
+    env_file:
+      - ../envs/dev/.env
+    environment:
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: "postgresql"
+      DATABASE_CONNECTION_URI: "postgresql://${EVOLUTION_POSTGRES_USER:-postgres}:${EVOLUTION_POSTGRES_PASSWORD:-evolution_dev_2024}@evolution_postgres:5432/${EVOLUTION_POSTGRES_DB:-evolution_db}"
+      DATABASE_URL: "postgresql://${EVOLUTION_POSTGRES_USER:-postgres}:${EVOLUTION_POSTGRES_PASSWORD:-evolution_dev_2024}@evolution_postgres:5432/${EVOLUTION_POSTGRES_DB:-evolution_db}"
+      REDIS_ENABLED: "true"
+      REDIS_URI: "redis://:${REDIS_PASSWORD:-redis_dev_2024_S9u!rA3p}@redis:${REDIS_PORT:-6379}"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: "redis://:${REDIS_PASSWORD:-redis_dev_2024_S9u!rA3p}@redis:${REDIS_PORT:-6379}/6"
+      CACHE_REDIS_TTL: 604800
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+      CACHE_LOCAL_ENABLED: "false"
+      SERVER_TYPE: "http"
+      SERVER_PORT: ${EVOLUTION_API_PORT:-8081}
+      SERVER_URL: ${EVOLUTION_API_SERVER_URL:-http://localhost:8081}
+      PORT: ${EVOLUTION_API_PORT:-8081}
+      LOG_LEVEL: ${EVOLUTION_API_LOG_LEVEL:-ERROR}
+      LOG_COLOR: ${EVOLUTION_API_LOG_COLOR:-false}
+      LOG_BAILEYS: ${EVOLUTION_API_LOG_BAILEYS:-error}
+    depends_on:
+      evolution_postgres:
+        condition: service_healthy
+    ports:
+      - "${EVOLUTION_API_PORT:-8081}:8081"
+    expose:
+      - 8081
+    volumes:
+      - evolution_instances:/evolution/instances
+      - evolution_store:/evolution/store
+    networks:
+      - evolution_net
+      - promouork-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8081/ || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  evolution_postgres_data:
+  evolution_instances:
+  evolution_store:
+
+networks:
+  evolution_net:
+    driver: bridge
+  promouork-network:
+    external: true

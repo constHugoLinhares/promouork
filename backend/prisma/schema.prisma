@@ -1,0 +1,265 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    output   = "./generated"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model User {
+    id        String   @id @default(uuid())
+    email     String   @unique
+    password  String
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("users")
+}
+
+model Channel {
+    id          String   @id @default(uuid())
+    name        String
+    type        String   @default("telegram") // telegram, instagram_stories, whatsapp, etc.
+    chatId      String // ID ou identificador do canal na plataforma
+    description String?
+    categoryId  String // Categoria principal do canal (obrigatório)
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    category           Category                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+    posts              PostChannel[]
+    integrations       Integration[]
+    integrationConfigs IntegrationChannelConfig[]
+    schedulerChannels  PostSchedulerChannel[]
+    products           Product[]
+
+    @@unique([type, chatId])
+    @@map("channels")
+}
+
+model Template {
+    id         String   @id @default(uuid())
+    name       String
+    imageUrl   String? // URL da imagem gerada do template
+    background String? // Cor ou URL do background
+    width      Int      @default(1080) // Largura do template em pixels
+    height     Int      @default(1920) // Altura do template em pixels (padrão Instagram Stories)
+    elements   Json // Array de elementos Fabric.js (textos, imagens, links, etc.)
+    isDefault  Boolean  @default(false)
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    posts Post[]
+
+    @@map("templates")
+}
+
+model Post {
+    id          String   @id @default(uuid())
+    title       String
+    message     String // Mensagem personalizada para os canais de comunicação
+    imageUrl    String? // Imagem gerada do template
+    templateId  String?
+    isPublished Boolean  @default(false)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    template    Template?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+    postChannel PostChannel[]
+    postProduct PostProduct?
+
+    @@map("posts")
+}
+
+model PostProduct {
+    id     String @id @default(uuid())
+    postId String @unique
+
+    name          String
+    price         Float
+    originalPrice Float?
+    link          String
+    categoryId    String
+    subcategoryId String?
+    marketplace   String?
+
+    post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+    category    Category     @relation(fields: [categoryId], references: [id])
+    subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
+
+    @@map("post_products")
+}
+
+model Category {
+    id          String   @id @default(uuid())
+    name        String   @unique
+    slug        String   @unique
+    description String?
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    subcategories Subcategory[]
+    postProducts  PostProduct[]
+    copyMessages  CopyMessage[]
+    channels      Channel[]
+    products      Product[]
+
+    @@map("categories")
+}
+
+model Subcategory {
+    id          String   @id @default(uuid())
+    categoryId  String
+    name        String
+    slug        String
+    description String?
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+    postProducts PostProduct[]
+    copyMessages CopyMessage[]
+    products     Product[]
+
+    @@unique([categoryId, slug])
+    @@map("subcategories")
+}
+
+model CopyMessage {
+    id            String   @id @default(uuid())
+    categoryId    String?
+    subcategoryId String?
+    message       String
+    isActive      Boolean  @default(true)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    category    Category?            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+    subcategory Subcategory?         @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+    products    ProductCopyMessage[]
+
+    @@map("copy_messages")
+}
+
+model PostChannel {
+    id        String    @id @default(uuid())
+    postId    String
+    channelId String
+    sentAt    DateTime?
+    status    String    @default("pending") // pending, sent, failed
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+    channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+    @@unique([postId, channelId])
+    @@map("post_channels")
+}
+
+model Integration {
+    id          String   @id @default(uuid())
+    type        String // aliexpress, shopee, amazon, ml, etc.
+    name        String
+    description String?
+    isActive    Boolean  @default(true)
+    config      Json? // Configurações gerais da integração (comissão mínima, filtros, etc.)
+    credentials Json? // Credenciais da integração (tokens, keys, etc.)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    channels       Channel[]
+    channelConfigs IntegrationChannelConfig[]
+    schedulers     PostScheduler[]
+
+    @@unique([type])
+    @@map("integrations")
+}
+
+model IntegrationChannelConfig {
+    id            String   @id @default(uuid())
+    integrationId String
+    channelId     String
+    config        Json // Configurações específicas desta integração para este canal (ex: keywords para Shopee)
+    isActive      Boolean  @default(true)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+    channel     Channel     @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+    @@unique([integrationId, channelId])
+    @@map("integration_channel_configs")
+}
+
+model PostScheduler {
+    id              String    @id @default(uuid())
+    name            String
+    intervalMinutes Int       @default(5) // Intervalo de execução em minutos
+    lastRunAt       DateTime?
+    nextRunAt       DateTime?
+    config          Json // Configurações de busca (keywords, category, subcategory, limit, etc.)
+
+    isActive      Boolean  @default(true)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    integrationId String
+
+    integration Integration            @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+    channels    PostSchedulerChannel[]
+
+    @@map("post_schedulers")
+}
+
+model PostSchedulerChannel {
+    id          String   @id @default(uuid())
+    schedulerId String
+    channelId   String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    scheduler PostScheduler @relation(fields: [schedulerId], references: [id], onDelete: Cascade)
+    channel   Channel       @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+    @@unique([schedulerId, channelId])
+    @@map("post_scheduler_channels")
+}
+
+model Product {
+    id            String   @id @default(uuid())
+    name          String   @unique // Nome do produto (ex: "fone bluetooth")
+    channelId     String // Canal ao qual o produto pertence (obrigatório)
+    categoryId    String?
+    subcategoryId String?
+    isActive      Boolean  @default(true)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    channel      Channel              @relation(fields: [channelId], references: [id], onDelete: Cascade)
+    category     Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+    subcategory  Subcategory?         @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+    copyMessages ProductCopyMessage[]
+
+    @@map("products")
+}
+
+model ProductCopyMessage {
+    id            String   @id @default(uuid())
+    productId     String
+    copyMessageId String
+    createdAt     DateTime @default(now())
+
+    product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+    copyMessage CopyMessage @relation(fields: [copyMessageId], references: [id], onDelete: Cascade)
+
+    @@unique([productId, copyMessageId])
+    @@map("product_copy_messages")
+}

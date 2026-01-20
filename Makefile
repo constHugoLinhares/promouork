@@ -1,0 +1,50 @@
+.PHONY: start start-db start-all start-evolution restart restart-evolution drop drop-evolution help
+
+# Comando padrão
+help:
+	@echo "Comandos disponíveis:"
+	@echo "  make start          - Inicia frontend e backend"
+	@echo "  make start-db       - Inicia o banco de dados"
+	@echo "  make start-redis    - Inicia o Redis"
+	@echo "  make start-all      - Inicia todos os serviços (postgres, redis, backend, frontend)"
+	@echo "  make start-evolution - Inicia os serviços da Evolution API"
+	@echo "  make restart        - Reinicia todos os serviços do compose principal"
+	@echo "  make restart-evolution - Reinicia os serviços da Evolution"
+	@echo "  make drop           - Remove todos os containers e volumes do compose principal"
+	@echo "  make drop-evolution - Remove todos os containers e volumes da Evolution"
+
+# Inicia apenas frontend e backend (sem o banco)
+start:
+	docker-compose up -d frontend backend
+
+# Inicia o banco de dados
+start-db:
+	docker-compose up -d postgres
+
+# Inicia o Redis
+start-redis:
+	docker-compose up -d redis
+
+# Inicia todos os serviços do compose principal
+start-all:
+	docker-compose up -d
+
+# Inicia os serviços da Evolution
+start-evolution:
+	docker-compose -f docker-compose.evolution.yml up -d
+
+# Reinicia todos os serviços do compose principal
+restart:
+	docker-compose restart
+
+# Reinicia os serviços da Evolution
+restart-evolution:
+	docker-compose -f docker-compose.evolution.yml restart
+
+# Remove todos os containers, volumes e networks do compose principal
+drop:
+	docker-compose down -v --remove-orphans
+
+# Remove todos os containers, volumes e networks da Evolution
+drop-evolution:
+	docker-compose -f docker-compose.evolution.yml down -v --remove-orphans
