@@ -14,6 +14,9 @@ RUN pnpm i
 
 COPY . .
 
+# Criar pasta public se não existir (Next.js precisa dela)
+RUN mkdir -p public
+
 # Build da aplicação
 RUN pnpm build
 

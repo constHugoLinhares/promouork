@@ -1,4 +1,4 @@
-.PHONY: start start-db start-all start-evolution restart restart-evolution drop drop-evolution help prod prod-stop prod-logs ssl ssl-renew
+.PHONY: start start-db start-all start-evolution restart restart-evolution drop drop-evolution help prod prod-stop prod-rebuild prod-logs ssl ssl-renew
 
 # Comando padrão
 help:
@@ -18,6 +18,7 @@ help:
 	@echo "  Produção:"
 	@echo "  make prod           - Inicia ambiente de produção com Nginx"
 	@echo "  make prod-stop      - Para ambiente de produção"
+	@echo "  make prod-rebuild   - Rebuild sem cache e inicia produção"
 	@echo "  make prod-logs      - Mostra logs da produção"
 	@echo "  make ssl            - Obtém certificados SSL (requer EMAIL=seu@email.com)"
 	@echo "  make ssl-renew      - Renova certificados SSL"
@@ -67,6 +68,11 @@ prod:
 # Para ambiente de produção
 prod-stop:
 	@./deploy.sh stop
+
+# Rebuild sem cache e inicia produção
+prod-rebuild:
+	docker compose -f docker-compose.prod.yml build --no-cache
+	docker compose -f docker-compose.prod.yml up -d
 
 # Mostra logs da produção
 prod-logs:
