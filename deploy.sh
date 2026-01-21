@@ -56,11 +56,21 @@ obtain_ssl() {
     
     echo -e "\n${YELLOW}Obtendo certificados SSL para ${domain}...${NC}"
     
-    # Parar nginx temporariamente se estiver rodando
-    docker compose -f docker-compose.prod.yml stop nginx 2>/dev/null || true
+    # Verificar se a porta 80 está livre
+    echo -e "${YELLOW}Verificando porta 80...${NC}"
+    if netstat -tuln 2>/dev/null | grep -q ':80 ' || ss -tuln 2>/dev/null | grep -q ':80 '; then
+        echo -e "${YELLOW}Porta 80 em uso. Parando serviços...${NC}"
+    fi
+    
+    # Parar todos os containers que possam estar usando a porta 80
+    docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+    
+    # Aguardar um momento para liberar a porta
+    sleep 2
     
     # Obter certificado usando certbot standalone
-    docker run --rm -it \
+    echo -e "${YELLOW}Executando Certbot...${NC}"
+    docker run --rm \
         -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
         -v "$(pwd)/certbot/www:/var/www/certbot" \
         -p 80:80 \
@@ -81,11 +91,15 @@ obtain_ssl() {
         echo -e "\n${YELLOW}Ativando configuração SSL...${NC}"
         cp nginx/nginx.ssl.conf nginx/nginx.conf
         
-        # Reiniciar nginx com SSL
-        docker compose -f docker-compose.prod.yml up -d nginx
-        echo -e "${GREEN}✓ Nginx reiniciado com SSL${NC}"
+        # Reiniciar todos os serviços com SSL
+        docker compose -f docker-compose.prod.yml up -d
+        echo -e "${GREEN}✓ Serviços reiniciados com SSL${NC}"
     else
-        echo -e "${RED}Erro ao obter certificados. Verifique se o DNS está configurado corretamente.${NC}"
+        echo -e "${RED}Erro ao obter certificados.${NC}"
+        echo -e "${YELLOW}Verifique:${NC}"
+        echo -e "  1. DNS configurado para todos os domínios (A records para @, www, api)"
+        echo -e "  2. Porta 80 liberada no firewall"
+        echo -e "  3. Nenhum outro serviço usando a porta 80"
         exit 1
     fi
 }
