@@ -70,6 +70,8 @@ obtain_ssl() {
         --email "$email" \
         --agree-tos \
         --no-eff-email \
+        --non-interactive \
+        --verbose \
         -d "$domain" \
         -d "www.$domain" \
         -d "api.$domain"
