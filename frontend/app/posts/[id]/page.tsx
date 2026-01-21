@@ -48,6 +48,7 @@ export default function EditPostPage() {
   const [loading, setLoading] = useState(false);
   const [loadingPost, setLoadingPost] = useState(true);
   const [isPublished, setIsPublished] = useState(false);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [markupType, setMarkupType] = useState<MarkupType>('html');
   const [showChannelForm, setShowChannelForm] = useState(false);
@@ -178,6 +179,7 @@ export default function EditPostPage() {
       });
       setIsPublished(post.isPublished || false);
       setMessageMode(hasProductData ? 'product' : 'free');
+      setOriginalImageUrl(post.imageUrl || null);
       
       // Inicializar histórico da mensagem
       messageHistoryRef.current = [initialMessage];
@@ -232,7 +234,6 @@ export default function EditPostPage() {
     try {
       // Se houver imagem em base64, fazer upload para R2
       let finalImageUrl = formData.imageUrl;
-      const originalImageUrl = post?.imageUrl; // Imagem original do post
       
       if (finalImageUrl && finalImageUrl.startsWith('data:image/')) {
         try {

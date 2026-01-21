@@ -23,8 +23,8 @@ export default function TextFormattingToolbar({
 
   useEffect(() => {
     const textarea = textareaId
-      ? document.getElementById(textareaId)
-      : document.querySelector('textarea[data-formatting-toolbar]') as HTMLTextAreaElement;
+      ? document.getElementById(textareaId) as HTMLTextAreaElement | null
+      : document.querySelector('textarea[data-formatting-toolbar]') as HTMLTextAreaElement | null;
 
     if (!textarea) return;
 
@@ -79,8 +79,8 @@ export default function TextFormattingToolbar({
     if (!selection) return;
 
     const textarea = textareaId
-      ? document.getElementById(textareaId)
-      : document.querySelector('textarea[data-formatting-toolbar]') as HTMLTextAreaElement;
+      ? document.getElementById(textareaId) as HTMLTextAreaElement | null
+      : document.querySelector('textarea[data-formatting-toolbar]') as HTMLTextAreaElement | null;
 
     if (!textarea) return;
 
