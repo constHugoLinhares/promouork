@@ -1,8 +1,10 @@
-.PHONY: start start-db start-all start-evolution restart restart-evolution drop drop-evolution help
+.PHONY: start start-db start-all start-evolution restart restart-evolution drop drop-evolution help prod prod-stop prod-logs ssl ssl-renew
 
 # Comando padrão
 help:
 	@echo "Comandos disponíveis:"
+	@echo ""
+	@echo "  Desenvolvimento:"
 	@echo "  make start          - Inicia frontend e backend"
 	@echo "  make start-db       - Inicia o banco de dados"
 	@echo "  make start-redis    - Inicia o Redis"
@@ -12,6 +14,13 @@ help:
 	@echo "  make restart-evolution - Reinicia os serviços da Evolution"
 	@echo "  make drop           - Remove todos os containers e volumes do compose principal"
 	@echo "  make drop-evolution - Remove todos os containers e volumes da Evolution"
+	@echo ""
+	@echo "  Produção:"
+	@echo "  make prod           - Inicia ambiente de produção com Nginx"
+	@echo "  make prod-stop      - Para ambiente de produção"
+	@echo "  make prod-logs      - Mostra logs da produção"
+	@echo "  make ssl            - Obtém certificados SSL (requer EMAIL=seu@email.com)"
+	@echo "  make ssl-renew      - Renova certificados SSL"
 
 # Inicia apenas frontend e backend (sem o banco)
 start:
@@ -48,3 +57,30 @@ drop:
 # Remove todos os containers, volumes e networks da Evolution
 drop-evolution:
 	docker-compose -f docker-compose.evolution.yml down -v --remove-orphans
+
+# ==================== PRODUÇÃO ====================
+
+# Inicia ambiente de produção com Nginx
+prod:
+	@./deploy.sh start
+
+# Para ambiente de produção
+prod-stop:
+	@./deploy.sh stop
+
+# Mostra logs da produção
+prod-logs:
+	@./deploy.sh logs
+
+# Obtém certificados SSL (uso: make ssl EMAIL=seu@email.com)
+ssl:
+ifndef EMAIL
+	@echo "Erro: EMAIL é obrigatório"
+	@echo "Uso: make ssl EMAIL=seu@email.com"
+	@exit 1
+endif
+	@./deploy.sh ssl $(EMAIL)
+
+# Renova certificados SSL
+ssl-renew:
+	@./deploy.sh renew

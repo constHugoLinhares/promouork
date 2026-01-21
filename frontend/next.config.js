@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'promouork.com.br', 'api.promouork.com.br'],
   },
   webpack: (config, { isServer, webpack }) => {
     // Ignorar módulos do Node.js tanto no cliente quanto no servidor
