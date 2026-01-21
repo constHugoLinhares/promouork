@@ -54,29 +54,19 @@ obtain_ssl() {
         exit 1
     fi
     
-    echo -e "\n${YELLOW}Obtendo certificados SSL para ${domain}...${NC}"
+    echo -e "\n${YELLOW}Obtendo certificados SSL para ${domain} (webroot)...${NC}"
     
-    # Verificar se a porta 80 está livre
-    echo -e "${YELLOW}Verificando porta 80...${NC}"
-    if netstat -tuln 2>/dev/null | grep -q ':80 ' || ss -tuln 2>/dev/null | grep -q ':80 '; then
-        echo -e "${YELLOW}Porta 80 em uso. Parando serviços...${NC}"
-    fi
+    # Nginx PRECISA estar rodando para servir o desafio
+    echo -e "${YELLOW}Garantindo que Nginx está rodando...${NC}"
+    docker compose -f docker-compose.prod.yml up -d nginx
     
-    # Parar todos os containers que possam estar usando a porta 80
-    docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+    sleep 3
     
-    # Aguardar um momento para liberar a porta
-    sleep 2
-    
-    # Obter certificado usando certbot standalone
+    # Obter certificado usando webroot (Nginx serve os arquivos de desafio)
     echo -e "${YELLOW}Executando Certbot...${NC}"
-    docker run --rm \
-        -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
-        -v "$(pwd)/certbot/www:/var/www/certbot" \
-        -p 80:80 \
-        certbot/certbot certonly \
-        --standalone \
-        --preferred-challenges http \
+    docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+        --webroot \
+        --webroot-path=/var/www/certbot \
         --email "$email" \
         --agree-tos \
         --no-eff-email \
@@ -87,19 +77,22 @@ obtain_ssl() {
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Certificados SSL obtidos com sucesso!${NC}"
         
-        # Trocar para configuração com SSL
+        # Ativar configuração SSL
         echo -e "\n${YELLOW}Ativando configuração SSL...${NC}"
         cp nginx/nginx.ssl.conf nginx/nginx.conf
         
-        # Reiniciar todos os serviços com SSL
-        docker compose -f docker-compose.prod.yml up -d
-        echo -e "${GREEN}✓ Serviços reiniciados com SSL${NC}"
+        # Recarregar Nginx para aplicar SSL
+        echo -e "${YELLOW}Recarregando Nginx...${NC}"
+        docker compose -f docker-compose.prod.yml exec nginx nginx -s reload || \
+            docker compose -f docker-compose.prod.yml restart nginx
+        
+        echo -e "${GREEN}✓ SSL configurado com sucesso!${NC}"
     else
         echo -e "${RED}Erro ao obter certificados.${NC}"
         echo -e "${YELLOW}Verifique:${NC}"
         echo -e "  1. DNS configurado para todos os domínios (A records para @, www, api)"
         echo -e "  2. Porta 80 liberada no firewall"
-        echo -e "  3. Nenhum outro serviço usando a porta 80"
+        echo -e "  3. Nginx está rodando e acessível"
         exit 1
     fi
 }
