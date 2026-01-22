@@ -518,8 +518,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
 
       return products;
     } catch (error: any) {
-        error,
-      );
       return [];
     }
   }
