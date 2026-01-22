@@ -27,7 +27,8 @@ promouork/
    - `DB_PASSWORD`: Senha do PostgreSQL (padrão: postgres)
    - `DB_NAME`: Nome do banco de dados (padrão: promouork)
    - `JWT_SECRET`: Chave secreta para JWT (altere em produção!)
-   - `TELEGRAM_BOT_TOKEN`: Token do bot do Telegram (opcional)
+   
+   **Nota**: O token do bot do Telegram agora é configurado por canal através da interface web, não mais via variável de ambiente.
 
 3. Execute o projeto com Docker usando o Makefile:
 
@@ -95,6 +96,7 @@ O sistema possui um seed que cria automaticamente:
 - Gerenciar canais do Telegram
 - Ativar/desativar canais
 - Chat ID do canal (ex: @channelname ou -1001234567890)
+- Configurar token do bot do Telegram por canal
 
 ### Templates
 - Criar templates personalizados

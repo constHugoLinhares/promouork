@@ -564,6 +564,13 @@ export class SchedulerService {
           markupType = MarkupType.PLAIN;
         }
 
+        // Buscar token do Telegram do config do canal
+        const channelConfig = channel.config as any;
+        const telegramBotToken =
+          channel.type === 'telegram'
+            ? channelConfig?.telegramBotToken
+            : undefined;
+
         // A imagem deve aparecer primeiro, então passamos a imageUrl do produto
         // O título será a copy (mensagem completa)
         // A mensagem será vazia já que tudo está no título
@@ -574,6 +581,7 @@ export class SchedulerService {
           message, // Mensagem vazia
           product.imageUrl, // Imagem do produto (aparece primeiro)
           markupType,
+          telegramBotToken,
         );
 
         if (result.success) {

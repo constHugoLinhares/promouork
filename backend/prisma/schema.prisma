@@ -28,6 +28,7 @@ model Channel {
     chatId      String // ID ou identificador do canal na plataforma
     description String?
     categoryId  String // Categoria principal do canal (obrigatório)
+    config      Json? // Configurações específicas do canal (ex: telegramBotToken)
     isActive    Boolean  @default(true)
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Telegraf } from 'telegraf';
 import {
   formatMessage,
@@ -9,25 +8,19 @@ import {
 
 @Injectable()
 export class TelegramService {
-  private bot: Telegraf;
-
-  constructor(private configService: ConfigService) {
-    const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
-    if (token) {
-      this.bot = new Telegraf(token);
-    }
-  }
-
   async sendMessage(
     chatId: string,
     title: string,
     message: string,
-    imageUrl?: string,
-    markupType: MarkupType = MarkupType.HTML,
+    imageUrl: string | undefined,
+    markupType: MarkupType,
+    botToken: string,
   ) {
-    if (!this.bot) {
-      throw new Error('Telegram bot token not configured');
+    if (!botToken) {
+      throw new Error('Telegram bot token not provided');
     }
+
+    const bot = new Telegraf(botToken);
 
     try {
       // Formatar mensagem com título
@@ -41,7 +34,7 @@ export class TelegramService {
       if (imageUrl && this.isValidImageUrl(imageUrl)) {
         try {
           // Tentar enviar foto com legenda
-          await this.bot.telegram.sendPhoto(chatId, imageUrl, {
+          await bot.telegram.sendPhoto(chatId, imageUrl, {
             caption: formatted.formatted,
             parse_mode: formatted.parseMode,
           });
@@ -56,7 +49,7 @@ export class TelegramService {
       }
 
       // Enviar apenas texto (se não houver imagem ou se o envio da imagem falhar)
-      await this.bot.telegram.sendMessage(chatId, formatted.formatted, {
+      await bot.telegram.sendMessage(chatId, formatted.formatted, {
         parse_mode: formatted.parseMode,
       });
     } catch (error: any) {

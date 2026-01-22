@@ -26,6 +26,9 @@ interface Channel {
   description?: string;
   categoryId?: string;
   category?: Category;
+  config?: {
+    telegramBotToken?: string;
+  };
   isActive: boolean;
   products?: Product[];
 }
@@ -60,6 +63,7 @@ export default function ChannelsPage() {
     chatId: '',
     description: '',
     categoryId: '',
+    telegramBotToken: '',
     isActive: true,
   });
   const [expandedChannels, setExpandedChannels] = useState<Set<string>>(new Set());
@@ -214,11 +218,27 @@ export default function ChannelsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload: any = {
+        name: formData.name,
+        type: formData.type,
+        chatId: formData.chatId,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        isActive: formData.isActive,
+      };
+
+      // Adicionar config apenas para Telegram
+      if (formData.type === 'telegram' && formData.telegramBotToken) {
+        payload.config = {
+          telegramBotToken: formData.telegramBotToken,
+        };
+      }
+
       if (editingChannel) {
-        await api.patch(`/channels/${editingChannel.id}`, formData);
+        await api.patch(`/channels/${editingChannel.id}`, payload);
         setEditingChannel(null);
       } else {
-        await api.post('/channels', formData);
+        await api.post('/channels', payload);
       }
       setShowForm(false);
       resetForm();
@@ -235,18 +255,21 @@ export default function ChannelsPage() {
       chatId: '',
       description: '',
       categoryId: '',
+      telegramBotToken: '',
       isActive: true,
     });
   };
 
   const handleEdit = (channel: Channel) => {
     setEditingChannel(channel);
+    const config = channel.config as any;
     setFormData({
       name: channel.name,
       type: channel.type,
       chatId: channel.chatId,
       description: channel.description || '',
       categoryId: channel.categoryId || '',
+      telegramBotToken: config?.telegramBotToken || '',
       isActive: channel.isActive,
     });
     if (channel.categoryId) {
@@ -354,6 +377,25 @@ export default function ChannelsPage() {
                 className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-md text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
+
+            {formData.type === 'telegram' && (
+              <div>
+                <label className="block text-sm font-medium text-dark-text mb-1">
+                  Token do Bot do Telegram *
+                </label>
+                <input
+                  type="password"
+                  value={formData.telegramBotToken}
+                  onChange={(e) => setFormData({ ...formData, telegramBotToken: e.target.value })}
+                  required
+                  placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+                  className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-md text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <p className="text-xs text-dark-muted mt-1">
+                  Obtenha o token criando um bot com @BotFather no Telegram
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-dark-text mb-1">

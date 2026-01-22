@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { TelegramService } from './telegram.service';
-import { InstagramService } from './instagram.service';
-import { WhatsAppService } from './whatsapp.service';
 import { MarkupType } from './formatters/message.formatter';
+import { InstagramService } from './instagram.service';
+import { TelegramService } from './telegram.service';
+import { WhatsAppService } from './whatsapp.service';
 
 export interface PublishResult {
   success: boolean;
@@ -22,18 +22,26 @@ export class PublisherService {
     channelId: string,
     title: string,
     message: string,
-    imageUrl?: string,
-    markupType: MarkupType = MarkupType.HTML,
+    imageUrl: string | undefined,
+    markupType: MarkupType,
+    telegramBotToken?: string,
   ): Promise<PublishResult> {
     try {
       switch (channelType) {
         case 'telegram':
+          if (!telegramBotToken) {
+            return {
+              success: false,
+              error: 'Telegram bot token not configured for this channel',
+            };
+          }
           await this.telegramService.sendMessage(
             channelId,
             title,
             message,
             imageUrl,
             markupType,
+            telegramBotToken,
           );
           return { success: true };
 
@@ -69,4 +77,3 @@ export class PublisherService {
     }
   }
 }
-

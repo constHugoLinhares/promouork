@@ -288,6 +288,13 @@ export class PostsService {
           markupType = MarkupType.PLAIN;
         }
 
+        // Buscar token do Telegram do config do canal
+        const channelConfig = postChannel.channel.config as any;
+        const telegramBotToken =
+          postChannel.channel.type === 'telegram'
+            ? channelConfig?.telegramBotToken
+            : undefined;
+
         const result = await this.publisherService.publishToChannel(
           postChannel.channel.type,
           postChannel.channel.chatId,
@@ -295,6 +302,7 @@ export class PostsService {
           post.message,
           post.imageUrl,
           markupType,
+          telegramBotToken,
         );
 
         if (result.success) {

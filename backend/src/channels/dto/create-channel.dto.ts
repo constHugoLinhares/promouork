@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsIn,
+  IsObject,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -22,6 +23,12 @@ export class CreateChannelDto {
 
   @IsString()
   categoryId: string;
+
+  @IsObject()
+  @IsOptional()
+  config?: {
+    telegramBotToken?: string;
+  };
 
   @IsBoolean()
   @IsOptional()

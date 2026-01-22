@@ -12,7 +12,7 @@ import {
   generateProductMessage,
   getRandomHook,
 } from '@/lib/product-message';
-import { uploadImageToR2, deleteImageFromR2, convertR2UrlToWorkerUrl, convertR2UrlToWorkerUrlAsync } from '@/lib/storage';
+import { convertR2UrlToWorkerUrl, convertR2UrlToWorkerUrlAsync, deleteImageFromR2, uploadImageToR2 } from '@/lib/storage';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -57,6 +57,7 @@ export default function EditPostPage() {
     type: 'telegram',
     chatId: '',
     description: '',
+    telegramBotToken: '',
   });
   const [creatingChannel, setCreatingChannel] = useState(false);
   
@@ -324,10 +325,22 @@ export default function EditPostPage() {
     setCreatingChannel(true);
 
     try {
-      const response = await api.post('/channels', {
-        ...newChannel,
+      const payload: any = {
+        name: newChannel.name,
+        type: newChannel.type,
+        chatId: newChannel.chatId,
+        description: newChannel.description,
         isActive: true,
-      });
+      };
+
+      // Adicionar config apenas para Telegram
+      if (newChannel.type === 'telegram' && newChannel.telegramBotToken) {
+        payload.config = {
+          telegramBotToken: newChannel.telegramBotToken,
+        };
+      }
+
+      const response = await api.post('/channels', payload);
       
       // Adicionar o novo canal à lista e selecioná-lo automaticamente
       setChannels([...channels, response.data]);
@@ -337,7 +350,7 @@ export default function EditPostPage() {
       }));
       
       // Limpar formulário e fechar
-      setNewChannel({ name: '', type: 'telegram', chatId: '', description: '' });
+      setNewChannel({ name: '', type: 'telegram', chatId: '', description: '', telegramBotToken: '' });
       setShowChannelForm(false);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Erro ao criar canal');
@@ -911,6 +924,24 @@ export default function EditPostPage() {
                           }
                         />
                       </div>
+                      {newChannel.type === 'telegram' && (
+                        <div>
+                          <label className="block text-xs font-medium text-dark-text mb-1">
+                            Token do Bot do Telegram *
+                          </label>
+                          <input
+                            type="password"
+                            value={newChannel.telegramBotToken}
+                            onChange={(e) => setNewChannel({ ...newChannel, telegramBotToken: e.target.value })}
+                            required
+                            className="w-full px-3 py-2 text-sm bg-dark-bg/50 border border-dark-border rounded-md text-dark-text placeholder-dark-muted/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+                          />
+                          <p className="text-xs text-dark-muted mt-1">
+                            Obtenha o token criando um bot com @BotFather no Telegram
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <label className="block text-xs font-medium text-dark-text mb-1">
                           Descrição
