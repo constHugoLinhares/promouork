@@ -153,7 +153,6 @@ export class StorageService {
 
     const key = this.extractKeyFromUrl(imageUrl);
     if (!key) {
-      console.warn('Could not extract key from URL:', imageUrl);
       return false;
     }
 
@@ -166,7 +165,6 @@ export class StorageService {
       await this.s3Client.send(command);
       return true;
     } catch (error) {
-      console.error('Error deleting image:', error);
       return false;
     }
   }

@@ -56,35 +56,22 @@ export class ShopeeCacheService {
     const productId = this.extractProductId(link);
 
     if (!productId) {
-      console.log(
-        `[Cache] Could not extract product ID from link: ${link.substring(0, 100)}`,
-      );
       // Se não conseguir extrair o ID, tentar normalizar o link
       const normalizedLink = this.normalizeLink(link);
       return this.findProductByLink(normalizedLink);
     }
-
-    console.log(
-      `[Cache] Extracted product ID: ${productId} from link: ${link.substring(0, 100)}`,
-    );
 
     // Tentar buscar no Redis primeiro
     const cacheKey = this.getCacheKey(productId);
     const cached = await this.redisService.get<CachedProduct>(cacheKey);
 
     if (cached) {
-      console.log(
-        `[Cache] Found in Redis: Product ID ${productId} - Price: R$ ${cached.price}`,
-      );
       return cached;
     }
 
     // Se não encontrou no Redis, buscar no banco de dados
     // Buscar TODOS os produtos enviados (sem filtro de data)
     // Produtos em cache NUNCA devem ser reenviados, independentemente de quando foram enviados
-    console.log(
-      `[Cache] Not found in Redis, querying database for product ID: ${productId}`,
-    );
 
     const postProduct = await this.prisma.postProduct.findFirst({
       where: {
@@ -134,13 +121,8 @@ export class ShopeeCacheService {
     });
 
     if (!postProduct) {
-      console.log(`[Cache] Product with ID ${productId} not found in database`);
       return null;
     }
-
-    console.log(
-      `[Cache] Found in database: ${postProduct.name.substring(0, 50)} - Price: R$ ${postProduct.price} - Link: ${postProduct.link.substring(0, 100)}`,
-    );
 
     const cachedProduct: CachedProduct = {
       link: postProduct.link,
@@ -151,9 +133,6 @@ export class ShopeeCacheService {
 
     // Armazenar no Redis com TTL de 7 dias
     await this.redisService.set(cacheKey, cachedProduct, CACHE_TTL_SECONDS);
-    console.log(
-      `[Cache] Cached product ID ${productId} in Redis with TTL of 7 days`,
-    );
 
     return cachedProduct;
   }
@@ -297,21 +276,10 @@ export class ShopeeCacheService {
 
     // Se nunca foi enviado (não está no cache), deve enviar
     if (!cached) {
-      console.log(
-        `[Cache] Product ${productId || link.substring(0, 50)} not found in cache - will send`,
-      );
       return true;
     }
 
     // Se está no cache, NUNCA enviar (independentemente de quando foi enviado)
-    const daysSinceSent = Math.round(
-      (new Date().getTime() - new Date(cached.sentAt).getTime()) /
-        (1000 * 60 * 60 * 24),
-    );
-
-    console.log(
-      `[Cache] Product ${productId || link.substring(0, 50)} is in cache (sent ${daysSinceSent} days ago) - BLOCKED (never resend cached products)`,
-    );
     return false;
   }
 
@@ -410,9 +378,6 @@ export class ShopeeCacheService {
     };
 
     await this.redisService.set(cacheKey, cachedProduct, CACHE_TTL_SECONDS);
-    console.log(
-      `[Cache] Cached new product ID ${productId} in Redis with TTL of 7 days`,
-    );
   }
 
   /**
@@ -432,7 +397,6 @@ export class ShopeeCacheService {
     currentOriginalPrice?: number,
   ): Promise<boolean> {
     if (!itemId) {
-      console.log('[Cache] No itemId provided for scheduler product');
       return true; // Se não tem itemId, permitir enviar
     }
 
@@ -441,9 +405,6 @@ export class ShopeeCacheService {
 
     // Se não está no cache, deve enviar (mas não cacheia aqui - será cacheado após validação)
     if (!cached) {
-      console.log(
-        `[Cache] Scheduler product itemId ${itemId} not found in cache - will send (will be cached after validation)`,
-      );
       return true;
     }
 
@@ -452,9 +413,6 @@ export class ShopeeCacheService {
     const priceChanged = priceDifference > 0.01; // Tolerância de 1 centavo
 
     if (priceChanged) {
-      console.log(
-        `[Cache] Scheduler product itemId ${itemId} price changed: R$ ${cached.price} -> R$ ${currentPrice} - will send`,
-      );
       // Atualizar cache com novo preço imediatamente
       await this.cacheSchedulerProduct(
         itemId,
@@ -464,9 +422,6 @@ export class ShopeeCacheService {
       return true;
     }
 
-    console.log(
-      `[Cache] Scheduler product itemId ${itemId} price unchanged (R$ ${currentPrice}) - BLOCKED`,
-    );
     return false;
   }
 
@@ -507,9 +462,6 @@ export class ShopeeCacheService {
     };
 
     await this.redisService.set(cacheKey, cachedProduct, CACHE_TTL_SECONDS);
-    console.log(
-      `[Cache] Cached scheduler product itemId ${itemId} in Redis with TTL of 7 days${copyId ? `, copyId: ${copyId}` : ''}`,
-    );
   }
 
   /**
@@ -541,13 +493,9 @@ export class ShopeeCacheService {
         await this.redisService.deleteByPattern('shopee:scheduler:*');
 
       const totalDeleted = productKeys + schedulerKeys;
-      console.log(
-        `[Cache] Cleared all Shopee cache: ${productKeys} product keys + ${schedulerKeys} scheduler keys = ${totalDeleted} total`,
-      );
 
       return totalDeleted;
     } catch (error) {
-      console.error('[Cache] Error clearing all cache:', error);
       throw error;
     }
   }

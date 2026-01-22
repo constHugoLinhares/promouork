@@ -92,9 +92,6 @@ export class DealsService {
     // Se subcategoria é 'general' ou vazia, usar apenas fallback
     // Não tentar inferir ou usar estratégias específicas
     if (!product.subcategory || product.subcategory === 'general') {
-      console.log(
-        `[CopyStrategy] Product has subcategory 'general' or empty - using fallback for: ${product.name}`,
-      );
       return this.fallbackCopyStrategy.generate(product);
     }
 
@@ -107,16 +104,10 @@ export class DealsService {
     // Se encontrou uma estratégia específica, usar ela
     if (specificStrategies.length > 0) {
       const strategy = specificStrategies[0];
-      console.log(
-        `[CopyStrategy] Using specific strategy '${strategy.constructor.name}' for product: ${product.category}/${product.subcategory}`,
-      );
       return strategy.generate(product);
     }
 
     // Se não encontrou estratégia específica, usar fallback
-    console.warn(
-      `[CopyStrategy] No specific strategy found for product: ${product.category}/${product.subcategory} - using fallback`,
-    );
 
     // Usar fallback como última opção
     return this.fallbackCopyStrategy.generate(product);

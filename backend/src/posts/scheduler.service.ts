@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 import { CopyMessagesService } from '../copy-messages/copy-messages.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,7 +11,6 @@ import { PublisherService } from './publisher.service';
 
 @Injectable()
 export class SchedulerService {
-  private readonly logger = new Logger(SchedulerService.name);
 
   constructor(
     private prisma: PrismaService,
@@ -51,13 +50,11 @@ export class SchedulerService {
       },
     });
 
-    console.log(schedulers);
-
     for (const scheduler of schedulers) {
       try {
         await this.executeScheduler(scheduler.id);
       } catch (error) {
-        this.logger.error(`Error executing scheduler ${scheduler.id}:`, error);
+        // Error executing scheduler
       }
     }
   }
@@ -87,9 +84,6 @@ export class SchedulerService {
     }
 
     if (!scheduler.integration.isActive) {
-      this.logger.warn(
-        `Scheduler ${schedulerId} skipped: integration ${scheduler.integrationId} is inactive`,
-      );
       return;
     }
 
@@ -99,13 +93,10 @@ export class SchedulerService {
     );
 
     if (activeChannels.length === 0) {
-      this.logger.warn(`Scheduler ${schedulerId} skipped: no active channels`);
       // Atualizar próxima execução mesmo assim
       await this.updateNextRun(scheduler);
       return;
     }
-
-    this.logger.log(`Executing scheduler ${scheduler.name} (${schedulerId})`);
 
     // Buscar produtos usando a configuração do scheduler
     const config = scheduler.config as any;
@@ -128,9 +119,6 @@ export class SchedulerService {
       );
 
       if (products.length === 0) {
-        this.logger.warn(
-          `No products found for scheduler channels. ProductIds: ${JSON.stringify(productIds)}, ChannelIds: ${JSON.stringify(schedulerChannelIds)}`,
-        );
         await this.updateNextRun(scheduler);
         return;
       }
@@ -143,15 +131,9 @@ export class SchedulerService {
         productMap.set(product.name.toLowerCase(), product);
       });
 
-      this.logger.log(
-        `Scheduler config - productIds: ${JSON.stringify(productIds)}, products: ${JSON.stringify(searchKeywords)}, filtered by channels: ${JSON.stringify(schedulerChannelIds)}, limit: ${targetLimit}`,
-      );
     } else {
       // Fallback para keywords antigas (compatibilidade)
       searchKeywords = Array.isArray(keywords) ? keywords : [];
-      this.logger.log(
-        `Scheduler config - keywords: ${JSON.stringify(searchKeywords)}, limit: ${targetLimit}`,
-      );
     }
 
     // Obter categoria do canal para garantir consistência
@@ -172,15 +154,8 @@ export class SchedulerService {
     for (const keyword of searchKeywords) {
       // Se já temos produtos suficientes, parar
       if (validProducts.length >= targetLimit) {
-        this.logger.log(
-          `Reached target limit (${targetLimit}). Stopping search.`,
-        );
         break;
       }
-
-      this.logger.log(
-        `Searching for products with keyword: "${keyword}" (${validProducts.length}/${targetLimit} found so far)`,
-      );
 
       // Buscar produtos usando uma única keyword
       const products = await this.dealsService.fetchDealsByIntegration(
@@ -197,15 +172,8 @@ export class SchedulerService {
       );
 
       if (products.length === 0) {
-        this.logger.warn(
-          `No products found for keyword "${keyword}". Continuing to next keyword.`,
-        );
         continue; // Continuar para a próxima keyword
       }
-
-      this.logger.log(
-        `Found ${products.length} products for keyword "${keyword}". Filtering...`,
-      );
 
       // Filtrar produtos que atendem aos critérios e são da categoria correta
       // E validar se devem ser enviados (comparar preços via cache)
@@ -231,9 +199,6 @@ export class SchedulerService {
           });
 
           if (hasBlockedKeyword) {
-            this.logger.debug(
-              `Product ${product.name} filtered: contains blocked keyword`,
-            );
             continue;
           }
         }
@@ -243,17 +208,11 @@ export class SchedulerService {
           product.ratingStar !== undefined &&
           product.ratingStar < minRatingStar
         ) {
-          this.logger.debug(
-            `Product ${product.name} filtered: ratingStar too low (${product.ratingStar} < ${minRatingStar})`,
-          );
           continue;
         }
 
         // Verificar categoria
         if (product.category !== expectedCategory) {
-          this.logger.debug(
-            `Product ${product.name} filtered: category mismatch (${product.category} != ${expectedCategory})`,
-          );
           continue;
         }
 
@@ -262,9 +221,6 @@ export class SchedulerService {
           expectedSubcategory &&
           product.subcategory !== expectedSubcategory
         ) {
-          this.logger.debug(
-            `Product ${product.name} filtered: subcategory mismatch (${product.subcategory} != ${expectedSubcategory})`,
-          );
           continue;
         }
 
@@ -275,9 +231,6 @@ export class SchedulerService {
 
         // Verificar se já foi processado nesta execução (evitar duplicatas por itemId)
         if (product.itemId && processedItemIds.has(product.itemId)) {
-          this.logger.debug(
-            `Product ${product.name} (itemId: ${product.itemId}) already processed in this execution - skipping`,
-          );
           continue;
         }
 
@@ -291,31 +244,18 @@ export class SchedulerService {
             );
 
           if (!shouldSend) {
-            this.logger.debug(
-              `Product ${product.name} (itemId: ${product.itemId}) filtered: price unchanged in cache`,
-            );
             continue;
           }
 
           // NÃO cachear aqui - será cacheado após publicar com o copyId
           processedItemIds.add(product.itemId); // Marcar como processado
-          this.logger.debug(
-            `Product ${product.name} (itemId: ${product.itemId}) validated - will be cached after publishing with copyId`,
-          );
         }
 
         filtered.push(product);
       }
 
       if (filtered.length > 0) {
-        this.logger.log(
-          `Found ${filtered.length} valid products for keyword "${keyword}". Total valid products: ${validProducts.length + filtered.length}`,
-        );
         validProducts.push(...filtered);
-      } else {
-        this.logger.warn(
-          `No valid products found for keyword "${keyword}" after filtering. Continuing to next keyword.`,
-        );
       }
     }
 
@@ -323,16 +263,9 @@ export class SchedulerService {
     const productsToPublish = validProducts.slice(0, targetLimit);
 
     if (productsToPublish.length === 0) {
-      this.logger.log(
-        `No valid products found for scheduler ${schedulerId} (category: ${expectedCategory}, subcategory: ${expectedSubcategory})`,
-      );
       await this.updateNextRun(scheduler);
       return;
     }
-
-    this.logger.log(
-      `Found ${productsToPublish.length}/${targetLimit} valid products for scheduler ${schedulerId}`,
-    );
 
     // Processar cada produto encontrado
     for (const product of productsToPublish) {
@@ -345,10 +278,7 @@ export class SchedulerService {
           product._usedKeyword, // Keyword usada para encontrar este produto
         );
       } catch (error) {
-        this.logger.error(
-          `Error processing product ${product.link} for scheduler ${schedulerId}:`,
-          error,
-        );
+        // Error processing product
       }
     }
 
@@ -380,9 +310,6 @@ export class SchedulerService {
       usedCopyIds = await this.shopeeCacheService.getUsedCopyIds(
         product.itemId,
       );
-      this.logger.debug(
-        `[Scheduler] Found ${usedCopyIds.length} already used copies for itemId ${product.itemId}`,
-      );
     }
 
     // Se temos productMap e keyword usada, fazer match direto pela keyword
@@ -390,19 +317,11 @@ export class SchedulerService {
       const keywordLower = usedKeyword.toLowerCase();
       const dbProduct = productMap.get(keywordLower);
 
-      this.logger.debug(
-        `[Scheduler] Attempting match - keyword: "${usedKeyword}" (lowercase: "${keywordLower}"), productMap keys: ${Array.from(productMap.keys()).join(', ')}`,
-      );
-
       if (dbProduct) {
         matchedProduct = dbProduct;
         productChannel = dbProduct.channel;
         productCategoryId =
           dbProduct.categoryId || productChannel?.category?.id;
-
-        this.logger.log(
-          `[Scheduler] ✅ Product match found: Shopee product "${product.name}" found via keyword "${usedKeyword}" -> DB Product "${dbProduct.name}" (ID: ${dbProduct.id})`,
-        );
 
         // Atribuir categoria do canal ao produto se ainda não tiver
         if (
@@ -413,23 +332,13 @@ export class SchedulerService {
           await this.productsService.update(dbProduct.id, {
             categoryId: productChannel.category.id,
           });
-          this.logger.log(
-            `[Scheduler] Assigned category ${productChannel.category.slug} to product ${dbProduct.name} from channel ${productChannel.name}`,
-          );
           productCategoryId = productChannel.category.id;
         }
-      } else {
-        this.logger.debug(
-          `[Scheduler] No exact match found for keyword "${usedKeyword}" in productMap`,
-        );
       }
     }
 
     // Se encontrou produto cadastrado, buscar copy relacionada
     if (matchedProduct) {
-      this.logger.log(
-        `[Scheduler] Searching for copy for product ID: ${matchedProduct.id} (name: ${matchedProduct.name}), category: ${productCategoryId}, excluding ${usedCopyIds.length} already used copies`,
-      );
       const copyResult = await this.copyMessagesService.getRandomCopyForProduct(
         matchedProduct.id,
         usedCopyIds,
@@ -439,16 +348,6 @@ export class SchedulerService {
       if (copyResult) {
         productCopy = copyResult.message;
         productCopyId = copyResult.copyId;
-        this.logger.log(
-          `[Scheduler] ✅ Found Product match: ${matchedProduct.name} - using copy (ID: ${productCopyId}, length: ${productCopy.length} chars)`,
-        );
-        this.logger.debug(
-          `[Scheduler] Copy content preview: ${productCopy.substring(0, 100)}...`,
-        );
-      } else {
-        this.logger.warn(
-          `[Scheduler] ⚠️ Found Product match: ${matchedProduct.name} - no available copies, will skip copy message`,
-        );
       }
     } else if (productMap && productMap.size > 0) {
       // Produto foi encontrado usando keyword cadastrada, mas não fez match exato
@@ -457,10 +356,6 @@ export class SchedulerService {
       productCategoryId = firstChannel?.category?.id;
 
       if (productCategoryId) {
-        this.logger.log(
-          `[Scheduler] Product found via keyword but no exact match. Searching for copy with category ${productCategoryId} (no subcategory) for Shopee product "${product.name}"`,
-        );
-
         // Buscar copy da categoria sem subcategoria
         const categoryCopies =
           await this.copyMessagesService.findAll(productCategoryId);
@@ -475,13 +370,6 @@ export class SchedulerService {
             availableCopies[Math.floor(Math.random() * availableCopies.length)];
           productCopy = selectedCopy.message;
           productCopyId = selectedCopy.id;
-          this.logger.log(
-            `[Scheduler] ✅ Using category copy (ID: ${productCopyId}) for product found via keyword`,
-          );
-        } else {
-          this.logger.warn(
-            `[Scheduler] ⚠️ No category copies available (without subcategory) for category ${productCategoryId}`,
-          );
         }
       }
     }
@@ -500,21 +388,7 @@ export class SchedulerService {
 
     // Se produto tem copy relacionada, incluir a copy
     if (productCopy) {
-      this.logger.log(
-        `[Scheduler] ✅ Using Product-related copy: ${productCopy.substring(0, 50)}...`,
-      );
-      this.logger.debug(`[Scheduler] Full productCopy content: ${productCopy}`);
       finalMessage += `${productCopy}\n\n`;
-    } else if (matchedProduct) {
-      // Product existe mas não tem copy relacionada - não incluir copy
-      this.logger.warn(
-        `[Scheduler] ⚠️ Product exists but has no related copies - skipping copy message. Product: ${matchedProduct.name} (ID: ${matchedProduct.id})`,
-      );
-    } else {
-      // Produto não está cadastrado - não incluir copy
-      this.logger.warn(
-        `[Scheduler] ⚠️ Product not registered - skipping copy message. Shopee product: "${product.name}"`,
-      );
     }
 
     // Nome do produto
@@ -532,19 +406,12 @@ export class SchedulerService {
     finalMessage += `👉 Comprar agora 👇\n`;
     finalMessage += `${product.link}`;
 
-    this.logger.debug(
-      `[Scheduler] Final message length: ${finalMessage.length} chars, includes copy: ${productCopy ? 'yes' : 'no'}`,
-    );
-
     // O título será a mensagem final completa
     const title = finalMessage;
     // A mensagem será vazia (já que o título contém tudo)
     const message = '';
 
     // Publicar em cada canal (SEM criar post no banco de dados)
-    this.logger.log(
-      `[Scheduler] Publishing product "${product.name}" to ${channels.length} channel(s)`,
-    );
 
     // Cachear produto apenas uma vez (após primeira publicação bem-sucedida)
     // O cache é compartilhado entre canais, então só precisa ser feito uma vez
@@ -552,10 +419,6 @@ export class SchedulerService {
 
     for (const schedulerChannel of channels) {
       const channel = schedulerChannel.channel;
-
-      this.logger.log(
-        `[Scheduler] Publishing to channel: ${channel.name} (${channel.type})`,
-      );
 
       try {
         // Determinar formato baseado no tipo de canal
@@ -594,29 +457,15 @@ export class SchedulerService {
               productCopyId, // Incluir copyId no cache
             );
             productCached = true;
-            this.logger.debug(
-              `[Scheduler] Cached product itemId ${product.itemId} with copyId ${productCopyId}`,
-            );
           }
-          this.logger.log(
-            `[Scheduler] ✅ Published product "${product.name}" (itemId: ${product.itemId}) to channel ${channel.name}${productCopyId ? ` with copy ${productCopyId}` : ''}`,
-          );
         } else {
           throw new Error(result.error || 'Failed to publish');
         }
       } catch (error) {
-        this.logger.error(
-          `[Scheduler] ❌ Error publishing to channel ${channel.name}:`,
-          error,
-        );
         // Continuar para o próximo canal mesmo se houver erro
         // Não criar registro de falha no banco (scheduler não usa banco)
       }
     }
-
-    this.logger.log(
-      `[Scheduler] Finished publishing product "${product.name}" to all channels`,
-    );
   }
 
   /**

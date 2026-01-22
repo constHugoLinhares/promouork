@@ -43,13 +43,8 @@ export class CopyMessagesService {
 
   async getRandomHook(categorySlug?: string, subcategorySlug?: string): Promise<string | undefined> {
     if (!categorySlug) {
-      console.log('[CopyMessages] No categorySlug provided');
       return undefined;
     }
-
-    console.log(
-      `[CopyMessages] Searching for hook - categorySlug: ${categorySlug}, subcategorySlug: ${subcategorySlug}`,
-    );
 
     // Buscar categoria pelo slug
     const category = await this.prisma.category.findUnique({
@@ -57,11 +52,8 @@ export class CopyMessagesService {
     });
 
     if (!category) {
-      console.log(`[CopyMessages] Category not found for slug: ${categorySlug}`);
       return undefined;
     }
-
-    console.log(`[CopyMessages] Category found: ${category.name} (${category.id})`);
 
     let copies: { message: string }[] = [];
 
@@ -75,9 +67,6 @@ export class CopyMessagesService {
       });
 
       if (subcategory) {
-        console.log(
-          `[CopyMessages] Subcategory found: ${subcategory.name} (${subcategory.id})`,
-        );
         // Buscar copies específicas da subcategoria
         copies = await this.prisma.copyMessage.findMany({
           where: {
@@ -87,13 +76,6 @@ export class CopyMessagesService {
           },
           select: { message: true },
         });
-        console.log(
-          `[CopyMessages] Found ${copies.length} copies for subcategory ${subcategorySlug}`,
-        );
-      } else {
-        console.log(
-          `[CopyMessages] Subcategory not found for slug: ${subcategorySlug}`,
-        );
       }
     }
 
@@ -107,22 +89,13 @@ export class CopyMessagesService {
         },
         select: { message: true },
       });
-      console.log(
-        `[CopyMessages] Found ${copies.length} copies for category ${categorySlug} (without subcategory)`,
-      );
     }
 
     if (copies.length === 0) {
-      console.log(
-        `[CopyMessages] No copies found for category: ${categorySlug}, subcategory: ${subcategorySlug}`,
-      );
       return undefined;
     }
 
     const selectedCopy = copies[Math.floor(Math.random() * copies.length)].message;
-    console.log(
-      `[CopyMessages] Selected copy: ${selectedCopy.substring(0, 50)}...`,
-    );
     return selectedCopy;
   }
 
@@ -189,16 +162,9 @@ export class CopyMessagesService {
       copies = copies.filter((copy) => !usedCopyIds.includes(copy.id));
     }
 
-    console.log(
-      `[CopyMessagesService] getRandomCopyForProduct - productId: ${productId}, found ${copies.length} available copies (${usedCopyIds.length} already used)`,
-    );
-
     // Se ainda há copies disponíveis, usar uma delas
     if (copies.length > 0) {
       const selectedCopy = copies[Math.floor(Math.random() * copies.length)];
-      console.log(
-        `[CopyMessagesService] Selected random copy (${selectedCopy.id}): ${selectedCopy.message.substring(0, 50)}...`,
-      );
       return {
         message: selectedCopy.message,
         copyId: selectedCopy.id,
@@ -207,9 +173,6 @@ export class CopyMessagesService {
 
     // Se não há copies relacionadas, buscar copies da mesma categoria do produto sem subcategoria
     if (productCategoryId) {
-      console.log(
-        `[CopyMessagesService] No copies related to product ${productId}, searching for copies with category ${productCategoryId} (no subcategory)...`,
-      );
 
       const categoryCopies = await this.prisma.copyMessage.findMany({
         where: {
@@ -232,23 +195,13 @@ export class CopyMessagesService {
       if (categoryCopies.length > 0) {
         const selectedCopy =
           categoryCopies[Math.floor(Math.random() * categoryCopies.length)];
-        console.log(
-          `[CopyMessagesService] Selected category copy (${selectedCopy.id}): ${selectedCopy.message.substring(0, 50)}...`,
-        );
         return {
           message: selectedCopy.message,
           copyId: selectedCopy.id,
         };
       }
-
-      console.log(
-        `[CopyMessagesService] No copies found for category ${productCategoryId} without subcategory`,
-      );
     }
 
-    console.log(
-      `[CopyMessagesService] No copies available for product ${productId}`,
-    );
     return undefined;
   }
 

@@ -76,7 +76,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
           payload = JSON.stringify(bodyObj);
         }
 
-        console.log('payload', payload);
 
         // Calcular signature: SHA256(Credential + Timestamp + Payload + Secret)
         const signatureFactor = `${partnerId}${timestamp}${payload}${partnerKey}`;
@@ -201,11 +200,8 @@ export class ShopeeAdapter implements MarketplaceAdapter {
       }
 
       if (keywords.length === 0) {
-        console.warn('No keywords provided for Shopee search');
         return [];
       }
-
-      console.log('Processing keywords for Shopee search:', keywords);
 
       const limit = params.limit || 20;
       const allNewProducts: Product[] = [];
@@ -228,7 +224,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
       // Limitar resultados ao limit solicitado
       return allNewProducts.slice(0, limit);
     } catch (error: any) {
-      console.error('Error fetching deals from Shopee:', error);
       return [];
     }
   }
@@ -251,9 +246,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
     let pageAttempts = 0;
     const maxPageAttempts = 50; // Aumentado para buscar mais páginas se necessário
 
-    console.log(
-      `[Shopee] Starting recursive search for keyword "${keyword}" (target: ${limit} new products)`,
-    );
 
     while (newProducts.length < limit && pageAttempts < maxPageAttempts) {
       pageAttempts++;
@@ -267,15 +259,8 @@ export class ShopeeAdapter implements MarketplaceAdapter {
         );
 
         if (products.length === 0) {
-          console.log(
-            `[Shopee] No products found on page ${pageAttempts} for keyword "${keyword}"`,
-          );
           break; // Não há mais produtos
         }
-
-        console.log(
-          `[Shopee] Page ${pageAttempts}: Found ${products.length} products for keyword "${keyword}"`,
-        );
 
         // Remover duplicatas baseado no link
         const uniqueProducts = Array.from(
@@ -300,20 +285,11 @@ export class ShopeeAdapter implements MarketplaceAdapter {
           ),
         );
 
-        const cachedCount = uniqueProducts.length - pageNewProducts.length;
-
-        console.log(
-          `[Shopee] Page ${pageAttempts}: ${pageNewProducts.length} new products, ${cachedCount} already cached (sent in last 7 days)`,
-        );
-
         // Adicionar produtos novos à lista
         newProducts.push(...pageNewProducts);
 
         // Se encontrou produtos novos suficientes, parar
         if (newProducts.length >= limit) {
-          console.log(
-            `[Shopee] Found enough new products (${newProducts.length}/${limit}) for keyword "${keyword}"`,
-          );
           break;
         }
 
@@ -321,46 +297,20 @@ export class ShopeeAdapter implements MarketplaceAdapter {
         if (pageNewProducts.length === 0) {
           if (pageInfo.hasNextPage && pageInfo.scrollId) {
             scrollId = pageInfo.scrollId;
-            console.log(
-              `[Shopee] All products from page ${pageAttempts} are cached, fetching next page (scrollId: ${scrollId.substring(0, 20)}...)`,
-            );
           } else {
-            console.log(
-              `[Shopee] All products from page ${pageAttempts} are cached, but no more pages available for keyword "${keyword}"`,
-            );
             break; // Não há mais páginas
           }
         } else {
           // Se encontrou alguns produtos novos mas não suficientes, continuar para próxima página
           if (pageInfo.hasNextPage && pageInfo.scrollId) {
             scrollId = pageInfo.scrollId;
-            console.log(
-              `[Shopee] Found ${pageNewProducts.length} new products but need more (${newProducts.length}/${limit}), fetching next page...`,
-            );
           } else {
-            console.log(
-              `[Shopee] Found ${pageNewProducts.length} new products but no more pages available for keyword "${keyword}"`,
-            );
             break; // Não há mais páginas
           }
         }
       } catch (error: any) {
-        console.error(
-          `[Shopee] Error fetching page ${pageAttempts} for keyword "${keyword}":`,
-          error.message,
-        );
         break; // Em caso de erro, parar a busca
       }
-    }
-
-    if (pageAttempts >= maxPageAttempts) {
-      console.warn(
-        `[Shopee] Reached max page attempts (${maxPageAttempts}) for keyword "${keyword}". Found ${newProducts.length} new products.`,
-      );
-    } else {
-      console.log(
-        `[Shopee] Completed search for keyword "${keyword}": ${newProducts.length} new products found in ${pageAttempts} pages`,
-      );
     }
 
     return newProducts;
@@ -376,9 +326,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
     scrollId?: string,
   ): Promise<{ products: Product[]; pageInfo: any }> {
     try {
-      console.log(
-        `Searching Shopee with keyword: "${keyword}"${scrollId ? ` (scrollId: ${scrollId})` : ''}`,
-      );
       const client = this.getApolloClient();
 
       // Query GraphQL para busca de produtos usando productOfferV2
@@ -491,7 +438,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
         pageInfo,
       };
     } catch (error: any) {
-      console.error(`Error searching Shopee with keyword "${keyword}":`, error);
 
       // Se GraphQL falhar, tentar método REST alternativo
       const restProducts = await this.searchByKeywordREST(keyword, params);
@@ -572,8 +518,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
 
       return products;
     } catch (error: any) {
-      console.error(
-        `Error searching Shopee REST with keyword "${keyword}":`,
         error,
       );
       return [];
@@ -852,7 +796,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
         ratingStar: item.ratingStar ? Number(item.ratingStar) : undefined,
       };
     } catch (error) {
-      console.error('Error transforming Shopee item:', error);
       return null;
     }
   }

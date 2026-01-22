@@ -40,11 +40,7 @@ export class TelegramService {
           });
           return; // Sucesso, sair da função
         } catch (photoError: any) {
-          // Se falhar ao enviar foto, logar o erro e tentar enviar apenas texto
-          console.warn(
-            `Failed to send photo to Telegram, falling back to text only: ${photoError.message}`,
-          );
-          // Continuar para enviar apenas texto
+          // Se falhar ao enviar foto, tentar enviar apenas texto
         }
       }
 
@@ -68,9 +64,6 @@ export class TelegramService {
 
     // Telegram não aceita data URLs (base64)
     if (url.startsWith('data:image/')) {
-      console.warn(
-        'Data URL detected. Telegram requires HTTP/HTTPS URLs. Image will be skipped.',
-      );
       return false;
     }
 
@@ -80,7 +73,6 @@ export class TelegramService {
       return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
     } catch {
       // URL inválida
-      console.warn(`Invalid image URL format: ${url}`);
       return false;
     }
   }

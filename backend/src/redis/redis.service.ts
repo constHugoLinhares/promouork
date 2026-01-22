@@ -24,20 +24,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       maxRetriesPerRequest: 3,
     });
 
-    this.client.on('error', (err) => {
-      console.error('[Redis] Connection error:', err);
+    this.client.on('error', () => {
+      // Connection error
     });
 
     this.client.on('connect', () => {
-      console.log('[Redis] Connected successfully');
+      // Connected
     });
 
     // Test connection
     try {
       await this.client.ping();
-      console.log('[Redis] Connection test successful');
     } catch (error) {
-      console.error('[Redis] Connection test failed:', error);
+      // Connection test failed
     }
   }
 
@@ -55,7 +54,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       if (!value) return null;
       return JSON.parse(value) as T;
     } catch (error) {
-      console.error(`[Redis] Error getting key ${key}:`, error);
       return null;
     }
   }
@@ -70,7 +68,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       }
       return true;
     } catch (error) {
-      console.error(`[Redis] Error setting key ${key}:`, error);
       return false;
     }
   }
@@ -80,7 +77,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       await this.client.del(key);
       return true;
     } catch (error) {
-      console.error(`[Redis] Error deleting key ${key}:`, error);
       return false;
     }
   }
@@ -90,7 +86,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       const result = await this.client.exists(key);
       return result === 1;
     } catch (error) {
-      console.error(`[Redis] Error checking existence of key ${key}:`, error);
       return false;
     }
   }
@@ -122,15 +117,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         }
       } while (cursor !== '0');
 
-      console.log(
-        `[Redis] Deleted ${deletedCount} keys matching pattern: ${pattern}`,
-      );
       return deletedCount;
     } catch (error) {
-      console.error(
-        `[Redis] Error deleting keys by pattern ${pattern}:`,
-        error,
-      );
       throw error;
     }
   }
