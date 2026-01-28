@@ -76,7 +76,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
           payload = JSON.stringify(bodyObj);
         }
 
-
         // Calcular signature: SHA256(Credential + Timestamp + Payload + Secret)
         const signatureFactor = `${partnerId}${timestamp}${payload}${partnerKey}`;
         const signature = crypto
@@ -107,44 +106,17 @@ export class ShopeeAdapter implements MarketplaceAdapter {
       },
     });
 
-    // Criar Apollo Client com cache em memória
-    // que será removido no Apollo Client 4.0. Não afeta a funcionalidade.
     this.apolloClient = new ApolloClient({
       link: httpLink,
       cache: new InMemoryCache({
-        // Configurar políticas de cache
         typePolicies: {
           Query: {
             fields: {
               productOfferV2: {
-                // Usar argumentos como chave de cache
-                keyArgs: ['keyword'],
-                // Merge de resultados para paginação
-                merge(existing, incoming) {
-                  // Se não há dados existentes, retornar incoming
-                  if (!existing) {
-                    return incoming;
-                  }
-                  // Se incoming não é um objeto válido, retornar existing
-                  if (!incoming || typeof incoming !== 'object') {
-                    return existing;
-                  }
-                  // Se incoming é um objeto com nodes, fazer merge dos nodes
-                  if (incoming?.nodes && existing?.nodes) {
-                    return {
-                      ...incoming,
-                      nodes: [
-                        ...(existing.nodes || []),
-                        ...(incoming.nodes || []),
-                      ],
-                    };
-                  }
-                  // Se ambos são arrays, fazer merge
-                  if (Array.isArray(existing) && Array.isArray(incoming)) {
-                    return [...existing, ...incoming];
-                  }
-                  // Por padrão, retornar incoming (substituir dados existentes)
-                  return incoming;
+                keyArgs: ['keyword', 'scrollId'],
+                // Nunca acumular: substituir sempre para limitar uso de memória no servidor
+                merge(_, incoming) {
+                  return incoming ?? null;
                 },
               },
             },
@@ -153,8 +125,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
       }),
       defaultOptions: {
         query: {
-          // No servidor, sempre buscar dados atualizados da rede
-          // O cache de duplicatas é gerenciado pelo ShopeeCacheService
           fetchPolicy: 'network-only',
         },
       },
@@ -245,7 +215,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
     let scrollId: string | undefined = undefined;
     let pageAttempts = 0;
     const maxPageAttempts = 50; // Aumentado para buscar mais páginas se necessário
-
 
     while (newProducts.length < limit && pageAttempts < maxPageAttempts) {
       pageAttempts++;
@@ -438,7 +407,6 @@ export class ShopeeAdapter implements MarketplaceAdapter {
         pageInfo,
       };
     } catch (error: any) {
-
       // Se GraphQL falhar, tentar método REST alternativo
       const restProducts = await this.searchByKeywordREST(keyword, params);
       return {

@@ -76,7 +76,8 @@ services:
       FRONTEND_URL: https://promouork.com.br
       PORT: 3001
       NODE_ENV: production
-    # DEBUG: Manter container rodando para inspecionar arquivos
+      NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=2048}
+    mem_limit: 2g
     command: [ "sh", "-c", "pnpm start:prod || tail -f /dev/null" ]
     depends_on:
       postgres:
