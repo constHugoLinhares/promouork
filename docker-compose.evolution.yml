@@ -39,17 +39,16 @@ services:
     container_name: evolution_api
     platform: linux/amd64
     restart: unless-stopped
-    env_file:
-      - ../envs/dev/.env
     environment:
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-evolution_promouork_key}
       DATABASE_ENABLED: "true"
       DATABASE_PROVIDER: "postgresql"
       DATABASE_CONNECTION_URI: "postgresql://${EVOLUTION_POSTGRES_USER:-postgres}:${EVOLUTION_POSTGRES_PASSWORD:-evolution_dev_2024}@evolution_postgres:5432/${EVOLUTION_POSTGRES_DB:-evolution_db}"
       DATABASE_URL: "postgresql://${EVOLUTION_POSTGRES_USER:-postgres}:${EVOLUTION_POSTGRES_PASSWORD:-evolution_dev_2024}@evolution_postgres:5432/${EVOLUTION_POSTGRES_DB:-evolution_db}"
       REDIS_ENABLED: "true"
-      REDIS_URI: "redis://:${REDIS_PASSWORD:-redis_dev_2024_S9u!rA3p}@redis:${REDIS_PORT:-6379}"
+      REDIS_URI: "redis://:${REDIS_PASSWORD:-redis_dev_2024}@redis:${REDIS_PORT:-6379}"
       CACHE_REDIS_ENABLED: "true"
-      CACHE_REDIS_URI: "redis://:${REDIS_PASSWORD:-redis_dev_2024_S9u!rA3p}@redis:${REDIS_PORT:-6379}/6"
+      CACHE_REDIS_URI: "redis://:${REDIS_PASSWORD:-redis_dev_2024}@redis:${REDIS_PORT:-6379}/6"
       CACHE_REDIS_TTL: 604800
       CACHE_REDIS_PREFIX_KEY: evolution
       CACHE_REDIS_SAVE_INSTANCES: "false"
@@ -94,4 +93,5 @@ networks:
   evolution_net:
     driver: bridge
   promouork-network:
-    external: true
+    name: promouork-network
+    driver: bridge

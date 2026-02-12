@@ -109,9 +109,18 @@ export class IntegrationsService {
   }
 
   /**
-   * Remove um canal de uma integração
+   * Remove um canal de uma integração.
+   * Também remove esse canal de todos os agendadores que usam esta integração.
    */
   async removeChannelFromIntegration(integrationId: string, channelId: string) {
+    // Remove o canal de todos os agendadores desta integração
+    await this.prisma.postSchedulerChannel.deleteMany({
+      where: {
+        channelId,
+        scheduler: { integrationId },
+      },
+    });
+
     return this.prisma.integration.update({
       where: { id: integrationId },
       data: {

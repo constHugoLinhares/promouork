@@ -1,7 +1,9 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { CopyMessagesModule } from '../copy-messages/copy-messages.module';
+import { EvolutionModule } from '../evolution/evolution.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
+import { PrismaModule } from '../prisma/prisma.module';
 import { ProductsModule } from '../products/products.module';
 import { ShopeeModule } from '../shopee/shopee.module';
 import { StorageModule } from '../storage/storage.module';
@@ -36,6 +38,8 @@ import { TechTecladoCopyStrategy } from './strategies/tech/tech-teclado-copy.str
     StorageModule,
     HttpModule,
     IntegrationsModule,
+    EvolutionModule,
+    PrismaModule,
     ShopeeModule,
   ],
   controllers: [PostsController, SchedulersController],

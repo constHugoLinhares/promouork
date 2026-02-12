@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -33,7 +34,7 @@ export class SchedulersController {
     });
 
     if (!integration || !integration.isActive) {
-      throw new Error('Integration not found or inactive');
+      throw new BadRequestException('Integration not found or inactive');
     }
 
     // Validar que todos os canais existem
@@ -44,7 +45,7 @@ export class SchedulersController {
     });
 
     if (channels.length !== channelIds.length) {
-      throw new Error('One or more channels not found');
+      throw new BadRequestException('One or more channels not found');
     }
 
     // Criar scheduler
@@ -121,14 +122,11 @@ export class SchedulersController {
   ) {
     const { channelIds, ...updateData } = updateSchedulerDto;
 
-    // Se channelIds foi fornecido, atualizar canais
     if (channelIds !== undefined) {
-      // Remover canais existentes
       await this.prisma.postSchedulerChannel.deleteMany({
         where: { schedulerId: id },
       });
 
-      // Adicionar novos canais
       if (channelIds.length > 0) {
         await this.prisma.postSchedulerChannel.createMany({
           data: channelIds.map((channelId) => ({

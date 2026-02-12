@@ -77,7 +77,6 @@ services:
       - backend
     networks:
       - promouork-network
-    command: sh -c "pnpm dev"
 
 volumes:
   postgres_data:
@@ -86,4 +85,5 @@ volumes:
 
 networks:
   promouork-network:
+    name: promouork-network
     driver: bridge

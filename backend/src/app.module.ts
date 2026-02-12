@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ChannelsModule } from './channels/channels.module';
 import { CopyMessagesModule } from './copy-messages/copy-messages.module';
+import { EvolutionModule } from './evolution/evolution.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { PostsModule } from './posts/posts.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -35,6 +36,7 @@ import { UsersModule } from './users/users.module';
     AliexpressModule,
     ShopeeModule,
     IntegrationsModule,
+    EvolutionModule,
     StorageModule,
   ],
 })

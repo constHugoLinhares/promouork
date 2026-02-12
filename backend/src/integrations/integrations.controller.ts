@@ -40,7 +40,7 @@ export class IntegrationsController {
   @Delete(':id/cache')
   async clearCache(@Param('id') id: string) {
     const integration = await this.integrationsService.findOne(id);
-    
+
     if (!integration) {
       throw new Error('Integration not found');
     }

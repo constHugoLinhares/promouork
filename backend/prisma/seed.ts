@@ -285,48 +285,26 @@ async function main() {
     categoryId: casaCategory.id,
   };
 
-  // Criar ou atualizar canal Tech
-  const techChannel = await prisma.channel.upsert({
-    where: {
-      type_chatId: {
-        type: techChannelData.type,
-        chatId: techChannelData.chatId,
-      },
-    },
-    update: techChannelData,
-    create: techChannelData,
-  });
-  console.log(`✅ Channel created/updated: ${techChannel.name}`);
+  // Criar canais apenas se não existir um canal com o mesmo nome
+  const channelDataList = [
+    techChannelData,
+    esporteChannelData,
+    casaChannelData,
+  ];
 
-  // Criar ou atualizar canal Esporte
-  const esporteChannel = await prisma.channel.upsert({
-    where: {
-      type_chatId: {
-        type: esporteChannelData.type,
-        chatId: esporteChannelData.chatId,
-      },
-    },
-    update: {
-      ...esporteChannelData,
-    },
-    create: esporteChannelData,
-  });
-  console.log(`✅ Channel created/updated: ${esporteChannel.name}`);
-
-  // Criar ou atualizar canal Casa
-  const casaChannel = await prisma.channel.upsert({
-    where: {
-      type_chatId: {
-        type: casaChannelData.type,
-        chatId: casaChannelData.chatId,
-      },
-    },
-    update: {
-      ...casaChannelData,
-    },
-    create: casaChannelData,
-  });
-  console.log(`✅ Channel created/updated: ${casaChannel.name}`);
+  for (const data of channelDataList) {
+    const existing = await prisma.channel.findFirst({
+      where: { name: data.name },
+    });
+    if (existing) {
+      console.log(`✅ Canal "${data.name}" já existe, nada a fazer`);
+    } else {
+      await prisma.channel.create({
+        data,
+      });
+      console.log(`✅ Canal criado: ${data.name}`);
+    }
+  }
 
   // Criar integrações iniciais (fixas, não editáveis pelo usuário)
   const aliexpressIntegration = await prisma.integration.upsert({
@@ -363,9 +341,23 @@ async function main() {
     },
   });
 
+  const evolutionIntegration = await prisma.integration.upsert({
+    where: { type: 'evolution' },
+    update: {},
+    create: {
+      type: 'evolution',
+      name: 'WhatsApp (Evolution)',
+      description:
+        'Conecte seu WhatsApp via Evolution API. Escaneie o QR code para vincular sua instância.',
+      isActive: true,
+      config: {},
+    },
+  });
+
   console.log('✅ Integrations created:', {
     aliexpress: aliexpressIntegration.name,
     shopee: shopeeIntegration.name,
+    evolution: evolutionIntegration.name,
   });
 
   console.log('🎉 Seed completed!');
