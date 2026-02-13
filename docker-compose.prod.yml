@@ -33,7 +33,10 @@ services:
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     restart: unless-stopped
     depends_on:
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     networks:
       - promouork-network
 
@@ -97,6 +100,12 @@ services:
         condition: service_healthy
     networks:
       - promouork-network
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
   frontend:
     build:
@@ -109,9 +118,16 @@ services:
     environment:
       NODE_ENV: production
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - promouork-network
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
 volumes:
   postgres_data:

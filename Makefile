@@ -1,4 +1,4 @@
-.PHONY: start start-db start-all start-evolution restart restart-evolution drop drop-evolution help prod prod-stop prod-rebuild prod-logs ssl ssl-renew
+.PHONY: start start-db start-all start-evolution restart restart-evolution drop drop-evolution help prod prod-stop prod-rebuild prod-logs restart-cloudflared ssl ssl-renew
 
 # Comando padrão
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "  make prod-stop      - Para ambiente de produção"
 	@echo "  make prod-rebuild   - Rebuild sem cache e inicia produção"
 	@echo "  make prod-logs      - Mostra logs da produção"
+	@echo "  make restart-cloudflared - Reinicia o cloudflared (recreate) após backend/frontend estarem no ar"
 	@echo "  make ssl            - Obtém certificados SSL (requer EMAIL=seu@email.com)"
 	@echo "  make ssl-renew      - Renova certificados SSL"
 
@@ -77,6 +78,10 @@ prod-rebuild:
 # Mostra logs da produção
 prod-logs:
 	@./deploy.sh logs
+
+# Reinicia o cloudflared (recreate) — use após backend e frontend já estarem rodando
+restart-cloudflared:
+	docker compose -f docker-compose.prod.yml -f docker-compose.evolution.yml up -d --force-recreate cloudflared
 
 # Obtém certificados SSL (uso: make ssl EMAIL=seu@email.com)
 ssl:
