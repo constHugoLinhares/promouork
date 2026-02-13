@@ -1,8 +1,18 @@
 'use client';
 
 import Layout from '@/components/Layout';
+import { IntegrationIcon } from '@/components/IntegrationIcons';
 import api from '@/lib/api';
 import { useCallback, useEffect, useState } from 'react';
+
+/* Estilos normalizados dos cards de integração */
+const cardBase = 'bg-dark-surface border-2 border-dark-border rounded-xl shadow-lg p-6';
+const cardTitle = 'text-lg font-semibold text-dark-text';
+const cardDescription = 'text-sm text-dark-muted leading-relaxed mt-1';
+const badgeBase = 'inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium border';
+const btnPrimary = 'py-2 px-4 rounded-lg text-sm font-medium bg-primary-500 text-white hover:bg-primary-600 transition-colors';
+const btnSecondary = 'py-2 px-4 rounded-lg text-sm font-medium border-2 border-dark-border bg-dark-bg/50 text-dark-text hover:bg-dark-border/50 transition-colors';
+const alertBox = 'p-4 rounded-lg border-2 text-sm';
 
 interface WhatsAppChat {
   id: string;
@@ -266,29 +276,6 @@ export default function IntegrationsPage() {
     }
   };
 
-  const getIntegrationIcon = (type: string) => {
-    switch (type) {
-      case 'aliexpress':
-        return (
-          <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">AE</span>
-          </div>
-        );
-      case 'shopee':
-        return (
-          <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">S</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center">
-            <span className="text-gray-400 font-bold text-lg">?</span>
-          </div>
-        );
-    }
-  };
-
   if (loading) {
     return (
       <Layout>
@@ -301,8 +288,8 @@ export default function IntegrationsPage() {
     <Layout>
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-dark-text mb-2">Integrações</h1>
-          <p className="text-dark-muted">
+          <h1 className="text-2xl font-bold text-dark-text mb-2">Integrações</h1>
+          <p className={cardDescription}>
             Gerencie suas integrações com marketplaces. Os canais são configurados nos Agendadores.
           </p>
         </div>
@@ -310,38 +297,34 @@ export default function IntegrationsPage() {
         {/* Cards de conexões e integrações — lado a lado */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Card WhatsApp (Conexões) */}
-          <div className="bg-dark-surface border border-dark-border shadow-lg rounded-lg p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center shrink-0">
-                  <span className="text-white font-bold text-lg">WA</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-dark-text">WhatsApp</h3>
-                  <p className="text-sm text-dark-muted mt-1">
+          <div className={cardBase}>
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="flex items-center gap-4 min-w-0">
+                <IntegrationIcon type="evolution" />
+                <div className="min-w-0">
+                  <h3 className={cardTitle}>WhatsApp</h3>
+                  <p className={cardDescription}>
                     Conecte para publicar mensagens em grupos e canais do WhatsApp.
                   </p>
                 </div>
               </div>
               <span
-                className={`px-3 py-1 rounded-full text-xs font-medium shrink-0 ${
+                className={`${badgeBase} shrink-0 ${
                   waConnectionState === 'open'
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                    ? 'bg-green-500/20 text-green-400 border-green-500/40'
+                    : 'bg-gray-500/20 text-gray-400 border-gray-500/40'
                 }`}
               >
                 {waConnectionState === 'open' ? 'Conectado' : 'Desconectado'}
               </span>
             </div>
 
-            <div className="p-4 bg-amber-500/20 border border-amber-500/40 rounded-md mb-6">
-              <p className="text-sm text-amber-200 font-medium">
-                Nenhum número está imune a banimento do WhatsApp. É importante evitar sempre o spam.
-              </p>
+            <div className={`${alertBox} bg-amber-500/20 border-amber-500/40 text-amber-200 font-medium mb-6`}>
+              Nenhum número está imune a banimento do WhatsApp. É importante evitar sempre o spam.
             </div>
 
             {waError && (
-                <div className="mb-6 p-4 bg-red-500/20 border border-red-500/40 rounded-md text-sm text-red-300">
+                <div className={`mb-6 ${alertBox} bg-red-500/20 border-red-500/40 text-red-300`}>
                   {waError}
                 </div>
               )}
@@ -354,9 +337,9 @@ export default function IntegrationsPage() {
                     </div>
                   ) : (
                     <>
-                      <div className="p-4 bg-green-500/20 border border-green-500/40 rounded-md text-center">
+                      <div className={`${alertBox} bg-green-500/20 border-green-500/40 text-center`}>
                         <p className="text-green-300 font-medium">Conectado</p>
-                        <p className="text-xs text-dark-muted mt-1">
+                        <p className="text-sm text-dark-muted mt-1">
                           Seu número está vinculado ao WhatsApp. Você pode publicar em canais do tipo WhatsApp.
                         </p>
                       </div>
@@ -364,7 +347,7 @@ export default function IntegrationsPage() {
                         type="button"
                         onClick={handleWaLogout}
                         disabled={waLoading}
-                        className="w-full bg-red-500/20 text-red-400 border border-red-500/40 py-2 px-4 rounded-md hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                        className={`w-full ${btnSecondary} bg-red-500/20 text-red-400 border-red-500/40 hover:bg-red-500/30 disabled:opacity-50`}
                       >
                         {waLoading ? 'Desconectando...' : 'Desconectar'}
                       </button>
@@ -384,7 +367,7 @@ export default function IntegrationsPage() {
                           Use o identificador (ID) abaixo no cadastro de canais para publicar nesses chats, grupos ou canais.
                         </p>
                         {waChatsError && (
-                          <div className="mb-3 p-3 bg-red-500/20 border border-red-500/40 rounded text-xs text-red-300">
+                          <div className={`mb-3 ${alertBox} bg-red-500/20 border-red-500/40 text-red-300 text-xs`}>
                             {waChatsError}
                           </div>
                         )}
@@ -395,7 +378,7 @@ export default function IntegrationsPage() {
                             Nenhum chat encontrado. Abra conversas no WhatsApp e clique em Atualizar lista.
                           </div>
                         ) : (
-                          <div className="max-h-64 overflow-y-auto rounded border border-dark-border">
+                          <div className="max-h-64 overflow-y-auto rounded-lg border-2 border-dark-border">
                             <table className="w-full text-left text-sm">
                               <thead className="bg-dark-border/50 sticky top-0">
                                 <tr>
@@ -431,7 +414,7 @@ export default function IntegrationsPage() {
                     <div className="flex justify-center py-12 text-dark-muted">Carregando QR...</div>
                   )}
                   {waQrCode && (
-                    <div className="flex justify-center p-4 bg-white rounded-lg">
+                    <div className="flex justify-center p-4 bg-white rounded-xl border-2 border-dark-border">
                       <img
                         src={waQrCode.startsWith('data:') ? waQrCode : `data:image/png;base64,${waQrCode}`}
                         alt="QR Code WhatsApp"
@@ -443,7 +426,7 @@ export default function IntegrationsPage() {
                     <button
                       type="button"
                       onClick={loadWaConnection}
-                      className="w-full bg-primary-500 text-white py-2 px-4 rounded-md hover:bg-primary-600 transition-colors"
+                      className={`w-full ${btnPrimary}`}
                     >
                       Gerar QR code
                     </button>
@@ -456,37 +439,30 @@ export default function IntegrationsPage() {
           {integrations
             .filter((integration) => integration.type !== 'evolution')
             .map((integration) => (
-              <div
-                key={integration.id}
-                className="bg-dark-surface border border-dark-border shadow-lg rounded-lg p-6"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    {getIntegrationIcon(integration.type)}
-                    <div>
-                      <h2 className="text-xl font-semibold text-dark-text">
-                        {integration.name}
-                      </h2>
+              <div key={integration.id} className={cardBase}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <IntegrationIcon type={integration.type} />
+                    <div className="min-w-0">
+                      <h2 className={cardTitle}>{integration.name}</h2>
                       {integration.description && (
-                        <p className="text-sm text-dark-muted mt-1">
-                          {integration.description}
-                        </p>
+                        <p className={cardDescription}>{integration.description}</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => handleClearCache(integration.id, integration.name)}
-                      className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-md hover:bg-red-500/30 transition-colors text-xs font-medium"
+                      className={`${badgeBase} bg-red-500/20 text-red-400 border-red-500/40 hover:bg-red-500/30 transition-colors`}
                       title={`Limpar cache da integração ${integration.name}`}
                     >
-                      🗑️ Limpar Cache
+                      Limpar Cache
                     </button>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      className={`${badgeBase} ${
                         integration.isActive
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                          : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                          ? 'bg-green-500/20 text-green-400 border-green-500/40'
+                          : 'bg-gray-500/20 text-gray-400 border-gray-500/40'
                       }`}
                     >
                       {integration.isActive ? 'Ativa' : 'Inativa'}
@@ -498,14 +474,14 @@ export default function IntegrationsPage() {
                   <div>
                     <button
                       onClick={() => handleConnectOAuth(integration.type, integration)}
-                      className="bg-primary-500 text-white px-4 py-2 rounded-md hover:bg-primary-600 transition-colors text-sm"
+                      className={btnPrimary}
                     >
                       {integration.type === 'shopee' && integration.credentials
                         ? 'Atualizar Credenciais'
                         : `Conectar ${integration.name}`}
                     </button>
                     {integration.type === 'shopee' && integration.credentials && (
-                      <p className="text-xs text-green-400 mt-2">
+                      <p className="text-sm text-green-400 mt-2">
                         ✓ Credenciais configuradas
                       </p>
                     )}
@@ -518,11 +494,11 @@ export default function IntegrationsPage() {
         {/* Modal credenciais Shopee */}
         {showShopeeCredentialsModal && selectedIntegration && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-dark-surface border border-dark-border rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold text-dark-text mb-2">
+            <div className="bg-dark-surface border-2 border-dark-border rounded-xl p-6 max-w-md w-full mx-4">
+              <h3 className={`${cardTitle} mb-2`}>
                 Configurar Credenciais da Shopee
               </h3>
-              <p className="text-sm text-dark-muted mb-6">
+              <p className={`${cardDescription} mb-6`}>
                 Informe suas credenciais de API da Shopee. Você pode encontrá-las no painel de
                 afiliados, em &quot;Meu API&quot;.
               </p>
@@ -558,7 +534,7 @@ export default function IntegrationsPage() {
                     placeholder="Sua senha de API da Shopee"
                     className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-md text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
-                  <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
+                  <div className={`mt-2 ${alertBox} bg-yellow-500/10 border-yellow-500/30`}>
                     <p className="text-xs text-yellow-400 font-medium mb-1">
                       ⚠️ Atenção Importante
                     </p>
@@ -572,10 +548,7 @@ export default function IntegrationsPage() {
               </div>
 
               <div className="flex gap-2 mt-6">
-                <button
-                  onClick={handleSaveShopeeCredentials}
-                  className="flex-1 bg-primary-500 text-white py-2 px-4 rounded-md hover:bg-primary-600 transition-colors"
-                >
+                <button onClick={handleSaveShopeeCredentials} className={`flex-1 ${btnPrimary}`}>
                   Salvar Credenciais
                 </button>
                 <button
@@ -584,7 +557,7 @@ export default function IntegrationsPage() {
                     setSelectedIntegration(null);
                     setShopeeCredentials({ appId: '', password: '' });
                   }}
-                  className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors"
+                  className={`flex-1 ${btnSecondary}`}
                 >
                   Cancelar
                 </button>

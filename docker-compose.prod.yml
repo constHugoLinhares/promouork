@@ -77,6 +77,8 @@ services:
       PORT: 3001
       NODE_ENV: production
       NODE_OPTIONS: ${NODE_OPTIONS:---max-old-space-size=2048}
+    ports:
+      - "3001:3001"
     mem_limit: 2g
     command: [ "sh", "-c", "pnpm start:prod || tail -f /dev/null" ]
     depends_on:
@@ -97,6 +99,8 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+    ports:
+      - "3000:3000"
     depends_on:
       - backend
     networks:
