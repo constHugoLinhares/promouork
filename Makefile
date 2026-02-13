@@ -16,7 +16,7 @@ help:
 	@echo "  make drop-evolution - Remove todos os containers e volumes da Evolution"
 	@echo ""
 	@echo "  Produção:"
-	@echo "  make prod           - Inicia ambiente de produção com Nginx"
+	@echo "  make prod           - Inicia ambiente de produção (prod + Evolution API)"
 	@echo "  make prod-stop      - Para ambiente de produção"
 	@echo "  make prod-rebuild   - Rebuild sem cache e inicia produção"
 	@echo "  make prod-logs      - Mostra logs da produção"
@@ -69,10 +69,10 @@ prod:
 prod-stop:
 	@./deploy.sh stop
 
-# Rebuild sem cache e inicia produção
+# Rebuild sem cache e inicia produção (prod + Evolution)
 prod-rebuild:
-	docker compose -f docker-compose.prod.yml build --no-cache
-	docker compose -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yml -f docker-compose.evolution.yml build --no-cache
+	docker compose -f docker-compose.prod.yml -f docker-compose.evolution.yml up -d
 
 # Mostra logs da produção
 prod-logs:

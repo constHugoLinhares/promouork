@@ -1,5 +1,3 @@
-# Use com: docker compose -f docker-compose.yml -f docker-compose.evolution.yml up
-# Variáveis vêm do .env na raiz. Veja .env.example.
 services:
   evolution_postgres:
     image: postgres:15

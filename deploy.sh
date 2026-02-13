@@ -38,9 +38,11 @@ setup_directories() {
     echo -e "${GREEN}✓ Diretórios criados${NC}"
 }
 
+COMPOSE_PROD="-f docker-compose.prod.yml -f docker-compose.evolution.yml"
+
 start_services() {
-    echo -e "\n${YELLOW}Iniciando serviços...${NC}"
-    docker compose -f docker-compose.prod.yml up -d --build
+    echo -e "\n${YELLOW}Iniciando serviços (prod + Evolution API)...${NC}"
+    docker compose $COMPOSE_PROD up -d --build
     echo -e "${GREEN}✓ Serviços iniciados${NC}"
 }
 
@@ -111,23 +113,23 @@ renew_ssl() {
 show_logs() {
     local service="${1:-}"
     if [ -z "$service" ]; then
-        docker compose -f docker-compose.prod.yml logs -f
+        docker compose $COMPOSE_PROD logs -f
     else
-        docker compose -f docker-compose.prod.yml logs -f "$service"
+        docker compose $COMPOSE_PROD logs -f "$service"
     fi
 }
 
 # Função para parar serviços
 stop_services() {
     echo -e "\n${YELLOW}Parando serviços...${NC}"
-    docker compose -f docker-compose.prod.yml down
+    docker compose $COMPOSE_PROD down
     echo -e "${GREEN}✓ Serviços parados${NC}"
 }
 
 # Função para mostrar status
 show_status() {
     echo -e "\n${YELLOW}Status dos serviços:${NC}"
-    docker compose -f docker-compose.prod.yml ps
+    docker compose $COMPOSE_PROD ps
 }
 
 # Função de ajuda
