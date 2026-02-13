@@ -1,3 +1,5 @@
+# Use com: docker compose -f docker-compose.yml -f docker-compose.evolution.yml up
+# Variáveis vêm do .env na raiz. Veja .env.example.
 services:
   evolution_postgres:
     image: postgres:15
@@ -16,55 +18,55 @@ services:
       - "-c"
       - "work_mem=4MB"
     environment:
-      POSTGRES_USER: ${EVOLUTION_POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${EVOLUTION_POSTGRES_PASSWORD:-evolution_dev_2024}
-      POSTGRES_DB: ${EVOLUTION_POSTGRES_DB:-evolution_db}
+      POSTGRES_USER: ${EVOLUTION_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${EVOLUTION_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${EVOLUTION_POSTGRES_DB}
       POSTGRES_HOST_AUTH_METHOD: trust
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "${EVOLUTION_POSTGRES_PORT:-5431}:5432"
+      - "${EVOLUTION_POSTGRES_PORT}:5432"
     volumes:
       - evolution_postgres_data:/var/lib/postgresql/data
     networks:
       - evolution_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${EVOLUTION_POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${EVOLUTION_POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
 
   evolution_api:
-    image: ${EVOLUTION_API_IMAGE:-chat2one/sending2:v2.5.5}
+    image: ${EVOLUTION_API_IMAGE}
     container_name: evolution_api
     platform: linux/amd64
     restart: unless-stopped
     environment:
-      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-evolution_promouork_key}
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
       DATABASE_ENABLED: "true"
       DATABASE_PROVIDER: "postgresql"
-      DATABASE_CONNECTION_URI: "postgresql://${EVOLUTION_POSTGRES_USER:-postgres}:${EVOLUTION_POSTGRES_PASSWORD:-evolution_dev_2024}@evolution_postgres:5432/${EVOLUTION_POSTGRES_DB:-evolution_db}"
-      DATABASE_URL: "postgresql://${EVOLUTION_POSTGRES_USER:-postgres}:${EVOLUTION_POSTGRES_PASSWORD:-evolution_dev_2024}@evolution_postgres:5432/${EVOLUTION_POSTGRES_DB:-evolution_db}"
+      DATABASE_CONNECTION_URI: "postgresql://${EVOLUTION_POSTGRES_USER}:${EVOLUTION_POSTGRES_PASSWORD}@evolution_postgres:5432/${EVOLUTION_POSTGRES_DB}"
+      DATABASE_URL: "postgresql://${EVOLUTION_POSTGRES_USER}:${EVOLUTION_POSTGRES_PASSWORD}@evolution_postgres:5432/${EVOLUTION_POSTGRES_DB}"
       REDIS_ENABLED: "true"
-      REDIS_URI: "redis://:${REDIS_PASSWORD:-redis_dev_2024}@redis:${REDIS_PORT:-6379}"
+      REDIS_URI: "redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT}"
       CACHE_REDIS_ENABLED: "true"
-      CACHE_REDIS_URI: "redis://:${REDIS_PASSWORD:-redis_dev_2024}@redis:${REDIS_PORT:-6379}/6"
+      CACHE_REDIS_URI: "redis://:${REDIS_PASSWORD}@redis:${REDIS_PORT}/6"
       CACHE_REDIS_TTL: 604800
       CACHE_REDIS_PREFIX_KEY: evolution
       CACHE_REDIS_SAVE_INSTANCES: "false"
       CACHE_LOCAL_ENABLED: "false"
       SERVER_TYPE: "http"
-      SERVER_PORT: ${EVOLUTION_API_PORT:-8081}
-      SERVER_URL: ${EVOLUTION_API_SERVER_URL:-http://localhost:8081}
-      PORT: ${EVOLUTION_API_PORT:-8081}
-      LOG_LEVEL: ${EVOLUTION_API_LOG_LEVEL:-ERROR}
-      LOG_COLOR: ${EVOLUTION_API_LOG_COLOR:-false}
-      LOG_BAILEYS: ${EVOLUTION_API_LOG_BAILEYS:-error}
+      SERVER_PORT: ${EVOLUTION_API_PORT}
+      SERVER_URL: ${EVOLUTION_API_SERVER_URL}
+      PORT: ${EVOLUTION_API_PORT}
+      LOG_LEVEL: ${EVOLUTION_API_LOG_LEVEL}
+      LOG_COLOR: ${EVOLUTION_API_LOG_COLOR}
+      LOG_BAILEYS: ${EVOLUTION_API_LOG_BAILEYS}
     depends_on:
       evolution_postgres:
         condition: service_healthy
     ports:
-      - "${EVOLUTION_API_PORT:-8081}:8081"
+      - "${EVOLUTION_API_PORT}:8081"
     expose:
       - 8081
     volumes:

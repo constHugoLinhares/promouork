@@ -27,7 +27,7 @@ promouork/
    - `DB_PASSWORD`: Senha do PostgreSQL (padrão: postgres)
    - `DB_NAME`: Nome do banco de dados (padrão: promouork)
    - `JWT_SECRET`: Chave secreta para JWT (altere em produção!)
-   
+
    **Nota**: O token do bot do Telegram agora é configurado por canal através da interface web, não mais via variável de ambiente.
 
 3. Execute o projeto com Docker usando o Makefile:
@@ -54,6 +54,7 @@ docker-compose up -d
 - `make drop` - Remove todos os containers e volumes
 
 O sistema irá:
+
 - Criar o banco de dados PostgreSQL
 - Executar as migrações do Prisma
 - Executar o seed (criar usuário admin)
@@ -72,6 +73,7 @@ O sistema irá:
 ## Seed
 
 O sistema possui um seed que cria automaticamente:
+
 - **Usuário administrador**:
   - Email: `admin@promouork.com`
   - Senha: `admin123`
@@ -82,23 +84,27 @@ O sistema possui um seed que cria automaticamente:
 ## Estrutura de Funcionalidades
 
 ### Autenticação
+
 - Login com email e senha
 - JWT para autenticação de requisições
 - Troca de senha no painel
 
 ### Posts
+
 - Criar, editar e excluir posts
 - Associar posts a múltiplos canais Telegram
 - Mensagens personalizadas por post
 - Publicação de posts para os canais selecionados
 
 ### Canais Telegram
+
 - Gerenciar canais do Telegram
 - Ativar/desativar canais
 - Chat ID do canal (ex: @channelname ou -1001234567890)
 - Configurar token do bot do Telegram por canal
 
 ### Templates
+
 - Criar templates personalizados
 - Definir template padrão
 - Editor visual com canvas
@@ -106,7 +112,7 @@ O sistema possui um seed que cria automaticamente:
 - Elementos posicionáveis (texto, imagens)
 
 ### Integração Telegram
+
 - Envio automático de mensagens
 - Suporte a imagens com legenda
 - Status de envio (pending, sent, failed)
-

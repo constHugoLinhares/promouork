@@ -194,6 +194,7 @@ export class EvolutionService {
     apikey: string,
   ): Promise<EvolutionConnectResult> {
     const url = `${this.baseUrl.replace(/\/$/, '')}/instance/connect/${instanceName}`;
+    console.log(url);
     let response;
     try {
       response = await firstValueFrom(
