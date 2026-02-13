@@ -13,7 +13,7 @@ services:
     networks:
       - promouork-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-promouork}" ]
       interval: 10s
       timeout: 5s
       retries: 5
