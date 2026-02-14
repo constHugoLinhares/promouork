@@ -11,6 +11,7 @@ import {
   EvolutionChatItem,
   EvolutionConnectResult,
   EvolutionConnectionState,
+  EvolutionInstanceNotFoundError,
   EvolutionService,
 } from './evolution.service';
 
@@ -50,11 +51,23 @@ export class EvolutionController {
       credentials = await this.evolutionService.createInstance();
       await this.evolutionService.setCredentials(credentials);
     }
-    const result = await this.evolutionService.getConnectQr(
-      credentials.instanceName,
-      credentials.apikey,
-    );
-    return result;
+    try {
+      return await this.evolutionService.getConnectQr(
+        credentials.instanceName,
+        credentials.apikey,
+      );
+    } catch (err) {
+      if (err instanceof EvolutionInstanceNotFoundError) {
+        await this.evolutionService.clearCredentials();
+        credentials = await this.evolutionService.createInstance();
+        await this.evolutionService.setCredentials(credentials);
+        return this.evolutionService.getConnectQr(
+          credentials.instanceName,
+          credentials.apikey,
+        );
+      }
+      throw err;
+    }
   }
 
   /**
@@ -70,11 +83,21 @@ export class EvolutionController {
         'No Evolution instance. Call POST /evolution/connect first.',
       );
     }
-    const result = await this.evolutionService.getConnectQr(
-      credentials.instanceName,
-      credentials.apikey,
-    );
-    return { qrCode: result.qrCode, pairCode: result.pairCode };
+    try {
+      const result = await this.evolutionService.getConnectQr(
+        credentials.instanceName,
+        credentials.apikey,
+      );
+      return { qrCode: result.qrCode, pairCode: result.pairCode };
+    } catch (err) {
+      if (err instanceof EvolutionInstanceNotFoundError) {
+        await this.evolutionService.clearCredentials();
+        throw new Error(
+          'Instance no longer exists on Evolution API. Call POST /evolution/connect to create a new connection.',
+        );
+      }
+      throw err;
+    }
   }
 
   /**

@@ -14,6 +14,14 @@ import { IntegrationsService } from '../integrations/integrations.service';
 const EVOLUTION_UNAVAILABLE =
   'Evolution API indisponível. Verifique se o serviço está rodando (EVOLUTION_API_URL).';
 
+/** Thrown when Evolution API returns 404 - instance no longer exists on the server. */
+export class EvolutionInstanceNotFoundError extends Error {
+  constructor(instanceName: string) {
+    super(`Evolution instance not found: ${instanceName}`);
+    this.name = 'EvolutionInstanceNotFoundError';
+  }
+}
+
 export interface EvolutionCredentials {
   instanceName: string;
   apikey: string;
@@ -194,7 +202,6 @@ export class EvolutionService {
     apikey: string,
   ): Promise<EvolutionConnectResult> {
     const url = `${this.baseUrl.replace(/\/$/, '')}/instance/connect/${instanceName}`;
-    console.log(url);
     let response;
     try {
       response = await firstValueFrom(
@@ -208,6 +215,9 @@ export class EvolutionService {
         throw new ServiceUnavailableException(EVOLUTION_UNAVAILABLE);
       }
       throw err;
+    }
+    if (response.status === 404) {
+      throw new EvolutionInstanceNotFoundError(instanceName);
     }
     if (response.status !== 200) {
       const msg =
@@ -264,10 +274,8 @@ export class EvolutionService {
     instanceName: string,
     apikey: string,
   ): Promise<EvolutionChatItem[]> {
-    console.log(instanceName, apikey);
     const url = `${this.baseUrl.replace(/\/$/, '')}/group/fetchAllGroups/${instanceName}?getParticipants=false`;
 
-    console.log(url);
     let response;
     try {
       response = await firstValueFrom(
@@ -276,7 +284,6 @@ export class EvolutionService {
           validateStatus: () => true,
         }),
       );
-      console.log(response);
     } catch (err) {
       if (this.isAxiosNetworkError(err)) {
         throw new ServiceUnavailableException(EVOLUTION_UNAVAILABLE);
